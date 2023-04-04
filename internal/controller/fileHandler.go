@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/GauravMakhijani/MyPassionFundSummary/internal/api"
+	"github.com/GauravMakhijani/MyPassionFundSummary/internal/literals"
 	"github.com/GauravMakhijani/MyPassionFundSummary/internal/model"
 	"github.com/GauravMakhijani/MyPassionFundSummary/server"
 	"github.com/sirupsen/logrus"
@@ -24,10 +26,10 @@ func PingHandler(rw http.ResponseWriter, rq *http.Request) {
 func handleDownloadPDF(w http.ResponseWriter, r *http.Request, deps *server.Dependencies, downloadRequest *model.FileDownloadRequest) {
 	//to be implemented by Rutuja
 
-	err := deps.service.DownloadFile(&downloadRequest)
-    if err!=nil{
-        
-    }
+	// err := deps.service.DownloadFile(&downloadRequest)
+	// if err!=nil{
+
+	// }
 }
 
 func handleDownloadExcel(w http.ResponseWriter, r *http.Request, deps *server.Dependencies, downloadRequest *model.FileDownloadRequest) {
@@ -40,35 +42,21 @@ func DownloadMyPassionFundSummaryHandler(deps *server.Dependencies) http.Handler
 		err := json.NewDecoder(r.Body).Decode(&downloadRequest)
 		if err != nil {
 			response := model.Response{
-				Message: "err- invalid input",
+				Message: literals.ErrInvalidInput,
 			}
-			respBytes, err := json.Marshal(response)
-			if err != nil {
-				logrus.WithField("err", err.Error()).Error("Error marshalling ping response")
-				w.WriteHeader(http.StatusInternalServerError)
-			}
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write(respBytes)
+			api.Response(w, http.StatusBadRequest, response)
 		}
 
 		switch downloadRequest.FormatType {
-		case "P":
+		case literals.PDFFormat:
 			handleDownloadPDF(w, r, deps, &downloadRequest)
-			// err:=deps.service.DownloadFile(r.Context(),&downloadRequest)
-			// if err
-		case "E":
+		case literals.ExcelFormat:
 			handleDownloadExcel(w, r, deps, &downloadRequest)
 		default:
 			response := model.Response{
-				Message: "err- invalid format",
+				Message: literals.ErrInvalidInput,
 			}
-			respBytes, err := json.Marshal(response)
-			if err != nil {
-				logrus.WithField("err", err.Error()).Error("Error marshalling ping response")
-				w.WriteHeader(http.StatusInternalServerError)
-			}
-			w.WriteHeader(http.StatusBadRequest)
-			w.Write(respBytes)
+			api.Response(w, http.StatusBadRequest, response)
 		}
 	})
 }
