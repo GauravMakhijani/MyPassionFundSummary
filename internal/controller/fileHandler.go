@@ -18,7 +18,7 @@ func PingHandler(rw http.ResponseWriter, rq *http.Request)  {
     respBytes,err := json.Marshal(response)
     if err != nil {
         logrus.WithField("err", err.Error()).Error("Error marshalling ping response")
-		rw.WriteHeader(http.StatusInternalServerError)
+        rw.WriteHeader(http.StatusInternalServerError)
     }
     rw.Write(respBytes)
 }
@@ -30,6 +30,15 @@ func handleDownloadPDF(w http.ResponseWriter, r *http.Request , deps *server.Dep
 
 func handleDownloadExcel(w http.ResponseWriter, r *http.Request , deps *server.Dependencies,downloadRequest *model.FileDownloadRequest){
     ///to be implemented by Gaurav
+    passionFundSummary, err:= deps.FileService.DownloadFileAsExcel(downloadRequest)
+    if err != nil {
+        response := model.Response{
+            Message : literals.ErrServerError,
+        }
+        api.Response(w,http.StatusInternalServerError,response)
+        return
+    }
+    api.Response(w,http.StatusCreated,passionFundSummary)
 }
 
 
@@ -42,6 +51,15 @@ func DownloadMyPassionFundSummaryHandler(deps *server.Dependencies) http.Handler
                 Message : literals.ErrInvalidInput,
             }
             api.Response(w,http.StatusBadRequest,response)
+            return
+        }
+
+        if(downloadRequest.HashUserId == "" || downloadRequest.FormatType == ""){
+            response := model.Response{
+                Message : literals.ErrInvalidInput,
+            }
+            api.Response(w,http.StatusBadRequest,response)
+            return
         }
 
         switch downloadRequest.FormatType{
