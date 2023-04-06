@@ -111,33 +111,37 @@ func GeneratePDF(fakename model.FakeName) error {
 	pdf.SetFont("Arial", "", 7)
 
 	// Generate table header
-	pdf.CellFormat(25, 6, "Account No", "1", 0, "C", false, 0, "")
-	pdf.CellFormat(20, 6, "Branch", "1", 0, "C", false, 0, "")
-	pdf.CellFormat(25, 6, "Name", "1", 0, "C", false, 0, "")
-	pdf.CellFormat(25, 6, "CCY", "1", 0, "C", false, 0, "")
-	pdf.CellFormat(40, 6, "Start date", "1", 0, "C", false, 0, "")
-	pdf.CellFormat(30, 6, "Installment Amount", "1", 0, "C", false, 0, "")
-	pdf.CellFormat(20, 6, "Maturity Amount", "1", 0, "C", false, 0, "")
-	pdf.CellFormat(20, 6, "Date of Maturity ", "1", 0, "C", false, 0, "")
-	pdf.CellFormat(15, 6, "Tenure", "1", 0, "C", false, 0, "")
-	pdf.CellFormat(25, 6, "Rate of Interest", "1", 0, "C", false, 0, "")
-	pdf.CellFormat(25, 6, "Current Principal amt", "1", 1, "C", false, 0, "")
+	pdf.CellFormat(15, 15, "Sr.No", "1", 0, "C", false, 0, "")
+	pdf.CellFormat(25, 15, "Account No", "1", 0, "C", false, 0, "")
+	pdf.CellFormat(20, 15, "Branch", "1", 0, "C", false, 0, "")
+	pdf.CellFormat(25, 15, "Name", "1", 0, "C", false, 0, "")
+	pdf.CellFormat(25, 15, "CCY", "1", 0, "C", false, 0, "")
+	pdf.CellFormat(40, 15, "Start date", "1", 0, "C", false, 0, "")
+	pdf.CellFormat(30, 15, "Installment Amount", "1", 0, "C", false, 0, "")
+	pdf.CellFormat(20, 15, "Maturity Amount", "1", 0, "C", false, 0, "")
+	pdf.CellFormat(20, 15, "Date of Maturity ", "1", 0, "C", false, 0, "")
+	pdf.CellFormat(15, 15, "Tenure", "1", 0, "C", false, 0, "")
+	pdf.CellFormat(25, 15, "Rate of Interest", "1", 0, "C", false, 0, "")
+	pdf.CellFormat(25, 15, "Current Principal amt", "1", 1, "C", false, 0, "")
 
-	//for _, fakeName := range fakename {
-
-	for _, data := range fakename.Passionfund {
+	for id, data := range fakename.Passionfund {
 		fmt.Print("is data gets print")
-		pdf.CellFormat(25, 6, fmt.Sprintf("%d", (data.AccountNO)), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(20, 6, data.Branch, "1", 0, "C", false, 0, "")
-		pdf.CellFormat(25, 6, data.Name, "1", 0, "C", false, 0, "")
-		pdf.CellFormat(25, 6, data.CCY, "1", 0, "C", false, 0, "")
-		pdf.CellFormat(40, 6, data.StartDate, "1", 0, "C", false, 0, "")
-		pdf.CellFormat(30, 6, fmt.Sprintf("%d", (data.InstallmentAmount)), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(20, 6, fmt.Sprintf("%d", (data.MaturityAmt)), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(20, 6, data.DateOfMaturity, "1", 0, "C", false, 0, "")
-		pdf.CellFormat(15, 6, fmt.Sprintf("%d", (data.Tenure)), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(25, 6, fmt.Sprintf("%d", (data.RateOfInterest)), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(25, 6, fmt.Sprintf("%d", (data.CurrentPrincipalAmt)), "1", 1, "C", false, 0, "")
+
+		pdf.CellFormat(15, 15, fmt.Sprintf("%d", id+1), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(25, 15, fmt.Sprintf("%d", (data.AccountNO)), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(20, 15, data.Branch, "1", 0, "C", false, 0, "")
+		pdf.CellFormat(25, 15, data.Name, "1", 0, "C", false, 0, "")
+		setText(25, 15, pdf, data.CCY)
+		//pdf.CellFormat(25, 15, data.CCY, "1", 0, "C", false, 0, "")
+
+		pdf.CellFormat(40, 15, data.StartDate, "1", 0, "C", false, 0, "")
+		pdf.CellFormat(30, 15, fmt.Sprintf("%d", (data.InstallmentAmount)), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(20, 15, fmt.Sprintf("%d", (data.MaturityAmt)), "1", 0, "C", false, 0, "")
+		setText(20, 15, pdf, data.DateOfMaturity)
+		//pdf.CellFormat(20, 15, data.DateOfMaturity, "1", 0, "C", false, 0, "")
+		pdf.CellFormat(15, 15, fmt.Sprintf("%d", (data.Tenure)), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(25, 15, fmt.Sprintf("%d", (data.RateOfInterest)), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(25, 15, fmt.Sprintf("%d", (data.CurrentPrincipalAmt)), "1", 1, "C", false, 0, "")
 
 	}
 	//}
@@ -161,4 +165,22 @@ func GeneratePDF(fakename model.FakeName) error {
 
 	return nil
 
+}
+
+func setText(w float64, h float64, pdf *gofpdf.Fpdf, text string) {
+	x := pdf.GetX()
+	y := pdf.GetY()
+	width, _ := pdf.GetPageSize()
+	_, _, right, _ := pdf.GetMargins()
+	if x+w > width-right {
+
+		// 	// move to the next line in the same row
+		pdf.SetXY(x, y+h)
+
+		// print the remaining text
+		pdf.CellFormat(w, h, text, "1", 0, "T", false, 0, "")
+	} else {
+		// print the text in the current cell
+		pdf.CellFormat(w, h, text, "1", 0, "T", false, 0, "")
+	}
 }
