@@ -2,12 +2,16 @@ package controller
 
 import (
 	"encoding/json"
+	"log"
 	"net/http"
 
 	"github.com/GauravMakhijani/MyPassionFundSummary/internal/api"
 	"github.com/GauravMakhijani/MyPassionFundSummary/internal/literals"
 	"github.com/GauravMakhijani/MyPassionFundSummary/internal/model"
 	"github.com/GauravMakhijani/MyPassionFundSummary/server"
+
+	//s"github.com/GauravMakhijani/MyPassionFundSummary/internal/5"
+
 	"github.com/sirupsen/logrus"
 )
 
@@ -25,11 +29,22 @@ func PingHandler(rw http.ResponseWriter, rq *http.Request) {
 
 func handleDownloadPDF(w http.ResponseWriter, r *http.Request, deps *server.Dependencies, downloadRequest *model.FileDownloadRequest) {
 	//to be implemented by Rutuja
+	//fmt.Print("hiiiiiiiii")
+	response, err := deps.FileService.DownloadFile()
+	if err != nil {
+		response := model.Response{
+			Message: "fail to download file",
+		}
+		api.Response(w, http.StatusForbidden, response)
+		return
 
-	// err := deps.service.DownloadFile(&downloadRequest)
-	// if err!=nil{
-
-	// }
+	}
+	json_response, err := json.Marshal(response)
+	if err != nil {
+		log.Fatal(err)
+	}
+	w.Header().Add("Content-Type", "application/json")
+	w.Write(json_response)
 }
 
 func handleDownloadExcel(w http.ResponseWriter, r *http.Request, deps *server.Dependencies, downloadRequest *model.FileDownloadRequest) {
