@@ -32,6 +32,7 @@ func GenerateFakeData() (user model.FakeName, err error) {
 	//generate fake name and address
 
 	fake := faker.New()
+    noOfData := 20
 	// fakenames := model.FakeName{
 	user.Name = fake.Person().Name()
 	user.Add = model.Address{
@@ -43,9 +44,9 @@ func GenerateFakeData() (user model.FakeName, err error) {
 		Country: fake.Address().Country(),
 		Pincode: fake.Address().PostCode(),
 	}
-	user.Passionfund = make([]model.FakeData, 5)
+	user.Passionfund = make([]model.FakeData, noOfData)
 	currTime := time.Now()
-	for i := 0; i < 5; i++ {
+	for i := 0; i < noOfData; i++ {
 		user.Passionfund[i].AccountNO = strconv.Itoa(fake.RandomNumber(10))
         user.Passionfund[i].Branch = fake.Address().City()
         user.Passionfund[i].Name = fake.Person().FirstName()
@@ -82,6 +83,8 @@ func GeneratePDF(fakename model.FakeName) error {
 		marginH  = 5.0
 		lineHt   = 4.0
 		cellGap  = 2.0
+        pageMaxUsage = 180.0
+        newPageStart = 10.0
 	)
 	// var colStrList [colCount]string
 	type cellType struct {
@@ -424,6 +427,10 @@ func GeneratePDF(fakename model.FakeName) error {
 			x += colWd[count]
 			count++
 		y += maxHt + cellGap + cellGap
+        if y > pageMaxUsage {
+            pdf.AddPage()
+            y = newPageStart
+        }
 		srNo++
 	}
 
