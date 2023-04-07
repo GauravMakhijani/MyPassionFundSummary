@@ -69,7 +69,7 @@ func DownloadMyPassionFundSummaryHandler(deps *server.Dependencies) http.Handler
 			handleDownloadExcel(w, r, deps, &downloadRequest)
 		default:
 			response := model.Response{
-				Message: literals.ErrInvalidInput,
+				Message: literals.ErrInvalidFormat,
 			}
 			api.Response(w, http.StatusBadRequest, response)
 		}
