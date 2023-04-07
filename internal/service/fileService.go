@@ -1,11 +1,14 @@
 package service
 
 import (
-	"fmt"
+	"errors"
+
 	"log"
+
 	"strconv"
 	"time"
 
+	"github.com/GauravMakhijani/MyPassionFundSummary/internal/literals"
 	"github.com/GauravMakhijani/MyPassionFundSummary/internal/model"
 	"github.com/jaswdr/faker"
 	"github.com/jung-kurt/gofpdf"
@@ -21,12 +24,15 @@ type FileServiceImpl struct {
 func NewFileService() FileService {
 	return &FileServiceImpl{}
 }
+func formatDate(date string) string {
+	t, _ := time.Parse(time.RFC3339, date)
+	return t.Format(literals.DateFormat)
+}
 func GenerateFakeData() (user model.FakeName, err error) {
-	//fakename := []model.FakeName{}
-	//generate fake name and address
 
 	fake := faker.New()
-	// fakenames := model.FakeName{
+	noOfData := 20
+
 	user.Name = fake.Person().Name()
 	user.Add = model.Address{
 		Line1:   fake.Address().BuildingNumber(),
@@ -37,16 +43,17 @@ func GenerateFakeData() (user model.FakeName, err error) {
 		Country: fake.Address().Country(),
 		Pincode: fake.Address().PostCode(),
 	}
-	user.Passionfund = make([]model.FakeData, 3)
-	for i := 0; i < 3; i++ {
+	user.Passionfund = make([]model.FakeData, noOfData)
+	currTime := time.Now()
+	for i := 0; i < noOfData; i++ {
 		user.Passionfund[i].AccountNO = strconv.Itoa(fake.RandomNumber(10))
 		user.Passionfund[i].Branch = fake.Address().City()
 		user.Passionfund[i].Name = fake.Person().FirstName()
 		user.Passionfund[i].CCY = "INR"
-		user.Passionfund[i].StartDate = fake.Time().RFC1123(time.Time{})
+		user.Passionfund[i].StartDate = fake.Time().RFC3339(currTime)
 		user.Passionfund[i].InstallmentAmount = strconv.FormatFloat(fake.RandomFloat(2, 1000, 1000000), 'f', 2, 64)
 		user.Passionfund[i].MaturityAmt = strconv.FormatFloat(fake.RandomFloat(2, 1000, 1000000), 'f', 2, 64)
-		user.Passionfund[i].DateOfMaturity = fake.Time().RFC3339(time.Time{})
+		user.Passionfund[i].DateOfMaturity = fake.Time().RFC3339(currTime)
 		user.Passionfund[i].Tenure = strconv.Itoa(fake.RandomNumber(2))
 		user.Passionfund[i].RateOfInterest = strconv.FormatFloat(fake.RandomFloat(2, 5, 20), 'f', 2, 64)
 		user.Passionfund[i].CurrentPrincipalAmt = strconv.FormatFloat(fake.RandomFloat(2, 1000, 1000000), 'f', 2, 64)
@@ -69,18 +76,16 @@ func (f *FileServiceImpl) DownloadFile() (response model.FileDownloadResponse, e
 	return model.FileDownloadResponse{}, nil
 }
 
-func GeneratePDF(fakename model.FakeName) error {
-
-	pdf := gofpdf.New("L", "mm", "A4", "")
-	pdf.AddPage()
-	//////////////////////////////////////////////////////////////////
+func GeneratePDF(fakename model.FakeName) (err error) {
 	const (
-		colCount = 12
-		marginH  = 1.0
-		lineHt   = 5.5
-		cellGap  = 2.0
+		colCount     = 12
+		marginH      = 5.0
+		lineHt       = 4.0
+		cellGap      = 2.0
+		pageMaxUsage = 180.0
+		newPageStart = 10.0
 	)
-	// var colStrList [colCount]string
+
 	type cellType struct {
 		str  string
 		list [][]byte
@@ -90,81 +95,91 @@ func GeneratePDF(fakename model.FakeName) error {
 		cellList [colCount]cellType
 		cell     cellType
 	)
-	/////////////////////////////////////////////////////////////////////////
-
+	pdf := gofpdf.New("L", "mm", "A4", "")
+	pdf.AddPage()
 	//Styling
 	pdf.SetFont("Arial", "", 10)
-	pdf.SetMargins(2, 0, 1)
+	pdf.SetMargins(marginH, 10, marginH)
+
 	pdf.SetTitle("MyPassionFundSummary", true)
 
-	x, y, w, h := 5.0, 5.0, 50.0, 30.0
+	ximg, yimg, wimg, himg := 5.0, 5.0, 50.0, 30.0
 
 	imageOptions := gofpdf.ImageOptions{
 		ImageType:             "png",
 		ReadDpi:               true,
 		AllowNegativePosition: true,
 	}
+	pdf.ImageOptions(".././images.png", ximg, yimg, wimg, himg, false, imageOptions, 0, "")
+	pdf.SetY(30)
 
-	pdf.ImageOptions(".././images.png", x, y, w, h, false, imageOptions, 0, "")
-	pdf.SetY(35)
-	//pdf.CellFormat(0, 10, "DREAM DEPOSIT SUMMARY")
-	pdf.SetFont("Arial", "B", 13)
-	pdf.MultiCell(100, 10, "DREAM DEPOSIT SUMMARY", "", "R", false)
-	// pdf.SetY(42)
 	pdf.SetFont("Arial", "B", 10)
+	pdf.MultiCell(100, 10, "DREAM DEPOSIT SUMMARY", "", "C", false)
+
+	pdf.SetFont("Arial", "B", 9)
 	name := "Name:"
 	pdf.CellFormat(18, 5, name, "", 0, "L", false, 0, "")
-	pdf.SetFont("Arial", "", 10)
+	pdf.SetFont("Arial", "", 9)
 	pdf.CellFormat(65.3, 5, fakename.Name, "", 1, "L", false, 0, "")
-	//pdf.SetY(42)
-	pdf.SetFont("Arial", "B", 10)
+	pdf.SetFont("Arial", "B", 9)
 
 	address := "Address:"
-
 	pdf.CellFormat(18, 5, address, "", 0, "L", false, 0, "")
-	pdf.SetFont("Arial", "", 10)
+
+	pdf.SetFont("Arial", "", 9)
 
 	pdf.CellFormat(65.3, 5, fakename.Add.Line1, "", 1, "L", false, 0, "")
-	pdf.SetX(20.1)
+	pdf.SetX(22.9)
 	pdf.CellFormat(55, 5, fakename.Add.Line2+",", "", 1, "L", false, 0, "")
-	pdf.SetX(20.1)
+	pdf.SetX(22.9)
 	pdf.CellFormat(55, 5, fakename.Add.Line3+",", "", 1, "L", false, 0, "")
-	pdf.SetX(20.1)
+	pdf.SetX(22.9)
 	pdf.CellFormat(55, 5, fakename.Add.City+",", "", 1, "L", false, 0, "")
-	pdf.SetX(20.1)
+	pdf.SetX(22.9)
 	pdf.CellFormat(55, 5, fakename.Add.State+",", "", 1, "L", false, 0, "")
-	pdf.SetX(20.1)
+	pdf.SetX(22.9)
 	pdf.CellFormat(55, 5, fakename.Add.Country+",", "", 1, "L", false, 0, "")
-	pdf.SetX(20.1)
+	pdf.SetX(22.9)
 	pdf.CellFormat(55, 5, fakename.Add.Pincode, "", 1, "L", false, 0, "")
+	//to add space between address and table
+	pdf.MultiCell(50, 10, "", "", "", false)
 
-	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	pdf.SetFont("Arial", "B", 8)
 
-	header := [colCount]string{"Sr.no", "Account No.", "Branch Name", "Name", "CCY", "Start Date", "Installment Amount", "Maturity Amount", "Date of Maturity", "Tenure (Months)", "Rate of Interest", "Current Principal Amount*"}
+	// Generate table header
 
-	// strList := loremList()
-	pdf.SetMargins(marginH, 15, marginH)
-	pdf.SetFont("Arial", "", 14)
-	//pdf.AddPage()
+	header := [colCount]string{"Sr.no", "Account No.", "Branch", "Name", "CCY", "Start Date", "Installment Amount", "Maturity Amount", "Date of Maturity", "Tenure (Months)", "Rate of Interest", "Current Principal Amount*"}
+	colWd := []float64{10, 30, 30, 40, 13, 25, 25, 25, 25, 20, 20, 20}
 
-	colWd := []float64{15, 25, 20, 25, 10, 40, 30, 25, 25, 25, 25, 20}
-
-	// Headers
-	pdf.SetTextColor(224, 224, 224)
-	pdf.SetFillColor(64, 64, 64)
-	for colJ := 0; colJ < colCount; colJ++ {
-		// cell.str = string(header[colJ])
-		// 	cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
-		// 	cell.ht = float64(len(cell.list)) * lineHt
-		// 	if cell.ht > maxHt {
-		// 		maxHt = cell.ht
-		// 	}
-		// 	cellList[count] = cell
-		pdf.CellFormat(colWd[colJ], 10, header[colJ], "1", 0, "CM", true, 0, "")
+	maxHt := lineHt
+	y := pdf.GetY()
+	for col, val := range header {
+		cell.str = val
+		cell.list = pdf.SplitLines([]byte(cell.str), colWd[col]-cellGap-cellGap)
+		cell.ht = float64(len(cell.list)) * lineHt
+		if cell.ht > maxHt {
+			maxHt = cell.ht
+		}
+		cellList[col] = cell
 	}
-	pdf.Ln(-1)
+	x := marginH
+	for col := range header {
+		pdf.Rect(x, y, colWd[col], maxHt+cellGap+cellGap, "D")
+		cell = cellList[col]
+		cellY := y + cellGap + (maxHt-cell.ht)/2
+		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+			pdf.SetXY(x+cellGap, cellY)
+			pdf.CellFormat(colWd[col]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+				"C", false, 0, "")
+			cellY += lineHt
+		}
+		x += colWd[col]
+	}
+
+	pdf.Ln(6)
 	pdf.SetTextColor(24, 24, 24)
 	pdf.SetFillColor(255, 255, 255)
+	pdf.SetFont("Arial", "", 8)
 
 	// Rows
 	y = pdf.GetY()
@@ -218,7 +233,7 @@ func GeneratePDF(fakename model.FakeName) error {
 		cellList[count] = cell
 		count++
 
-		cell.str = fund.StartDate
+		cell.str = formatDate(fund.StartDate)
 		cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
 		cell.ht = float64(len(cell.list)) * lineHt
 		if cell.ht > maxHt {
@@ -245,7 +260,7 @@ func GeneratePDF(fakename model.FakeName) error {
 		cellList[count] = cell
 		count++
 
-		cell.str = fund.DateOfMaturity
+		cell.str = formatDate(fund.DateOfMaturity)
 		cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
 		cell.ht = float64(len(cell.list)) * lineHt
 		if cell.ht > maxHt {
@@ -418,39 +433,26 @@ func GeneratePDF(fakename model.FakeName) error {
 		x += colWd[count]
 		count++
 		y += maxHt + cellGap + cellGap
+		if y > pageMaxUsage {
+			pdf.AddPage()
+			y = newPageStart
+		}
 		srNo++
 	}
 
-	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-	err := pdf.OutputFileAndClose("FDSummary.pdf")
-	if err != nil {
-		fmt.Println("ok here 4")
+	pdf.MultiCell(50, 10, "", "", "", false)
+	pdf.SetFont("Arial", "", 9)
+	currDepositBalance := "* Current Deposit Balance - Is the total installment amount paid till date towards funding of the Dream Deposit."
+	line2 := "* In case of default/delay in payments of installments,the maturity value mentioned above will be different from the actual maturity value."
 
-		return err
+	pdf.MultiCell(0, 5, currDepositBalance, "", "", false)
+	pdf.MultiCell(0, 5, line2, "", "", false)
+
+	err = pdf.OutputFileAndClose("FDSummary.pdf")
+	if err != nil {
+		err = errors.New(literals.ErrCreatingPDF)
+		return
 	}
 
-	return nil
-
+	return
 }
-
-// func setText(w float64, h float64, pdf *gofpdf.Fpdf, text string) {
-// 	x := pdf.GetX()
-// 	y := pdf.GetY()
-// 	width, _ := pdf.GetPageSize()
-// 	_, _, right, _ := pdf.GetMargins()
-// 	if x+w > width-right {
-// 		x = pdf.GetX() - w + 3
-// 		// move to the next line in the same cell
-// 		y = y + h
-
-// 		// 	// move to the next line in the same row
-// 		//	pdf.SetXY(x, y+h)
-// 		pdf.SetXY(x, y)
-
-// 		// print the remaining text
-// 		pdf.CellFormat(w, h, text, "1", 0, "C", false, 0, "")
-// 	} else {
-// 		// print the text in the current cell
-// 		pdf.CellFormat(w, h, text, "1", 0, "C", false, 0, "")
-// 	}
-// }

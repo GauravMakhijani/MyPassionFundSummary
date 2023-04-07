@@ -6,7 +6,7 @@ type Response struct {
 
 type FileDownloadRequest struct {
 	HashUserId string `json:"hashUserId"`
-	FormatType string `json:"format_type"`
+	FormatType string `json:"formatType"`
 }
 
 type FileDownloadResponse struct {
@@ -42,4 +42,10 @@ type FakeData struct {
 	Tenure              string
 	RateOfInterest      string
 	CurrentPrincipalAmt string
+}
+
+type cellType struct {
+	str  string
+	list [][]byte
+	ht   float64
 }
