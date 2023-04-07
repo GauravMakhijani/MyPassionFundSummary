@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/GauravMakhijani/MyPassionFundSummary/internal/model"
@@ -36,20 +37,19 @@ func GenerateFakeData() (user model.FakeName, err error) {
 		Country: fake.Address().Country(),
 		Pincode: fake.Address().PostCode(),
 	}
-	user.Passionfund = make([]model.FakeData, 5)
-	for i := 0; i < 5; i++ {
-		user.Passionfund[i].AccountNO = fake.RandomNumber(14)
-		user.Passionfund[i].Branch = fake.App().Name()
+	user.Passionfund = make([]model.FakeData, 3)
+	for i := 0; i < 3; i++ {
+		user.Passionfund[i].AccountNO = strconv.Itoa(fake.RandomNumber(10))
+		user.Passionfund[i].Branch = fake.Address().City()
 		user.Passionfund[i].Name = fake.Person().FirstName()
-		user.Passionfund[i].CCY = fake.Currency().Country()
+		user.Passionfund[i].CCY = "INR"
 		user.Passionfund[i].StartDate = fake.Time().RFC1123(time.Time{})
-		user.Passionfund[i].InstallmentAmount = fake.Currency().Number()
-		user.Passionfund[i].MaturityAmt = fake.Currency().Number()
+		user.Passionfund[i].InstallmentAmount = strconv.FormatFloat(fake.RandomFloat(2, 1000, 1000000), 'f', 2, 64)
+		user.Passionfund[i].MaturityAmt = strconv.FormatFloat(fake.RandomFloat(2, 1000, 1000000), 'f', 2, 64)
 		user.Passionfund[i].DateOfMaturity = fake.Time().RFC3339(time.Time{})
-		user.Passionfund[i].Tenure = fake.RandomNumber(5)
-		user.Passionfund[i].RateOfInterest = fake.RandomNumber(4)
-		user.Passionfund[i].CurrentPrincipalAmt = fake.Currency().Number()
-
+		user.Passionfund[i].Tenure = strconv.Itoa(fake.RandomNumber(2))
+		user.Passionfund[i].RateOfInterest = strconv.FormatFloat(fake.RandomFloat(2, 5, 20), 'f', 2, 64)
+		user.Passionfund[i].CurrentPrincipalAmt = strconv.FormatFloat(fake.RandomFloat(2, 1000, 1000000), 'f', 2, 64)
 	}
 
 	return
@@ -70,12 +70,31 @@ func (f *FileServiceImpl) DownloadFile() (response model.FileDownloadResponse, e
 }
 
 func GeneratePDF(fakename model.FakeName) error {
-	pdf := gofpdf.New("P", "mm", "A3", "")
+
+	pdf := gofpdf.New("L", "mm", "A4", "")
 	pdf.AddPage()
+	//////////////////////////////////////////////////////////////////
+	const (
+		colCount = 12
+		marginH  = 1.0
+		lineHt   = 5.5
+		cellGap  = 2.0
+	)
+	// var colStrList [colCount]string
+	type cellType struct {
+		str  string
+		list [][]byte
+		ht   float64
+	}
+	var (
+		cellList [colCount]cellType
+		cell     cellType
+	)
+	/////////////////////////////////////////////////////////////////////////
 
 	//Styling
 	pdf.SetFont("Arial", "", 10)
-	pdf.SetMargins(1, 0, 1)
+	pdf.SetMargins(2, 0, 1)
 	pdf.SetTitle("MyPassionFundSummary", true)
 
 	x, y, w, h := 5.0, 5.0, 50.0, 30.0
@@ -89,73 +108,320 @@ func GeneratePDF(fakename model.FakeName) error {
 	pdf.ImageOptions(".././images.png", x, y, w, h, false, imageOptions, 0, "")
 	pdf.SetY(35)
 	//pdf.CellFormat(0, 10, "DREAM DEPOSIT SUMMARY")
+	pdf.SetFont("Arial", "B", 13)
+	pdf.MultiCell(100, 10, "DREAM DEPOSIT SUMMARY", "", "R", false)
+	// pdf.SetY(42)
 	pdf.SetFont("Arial", "B", 10)
-	pdf.MultiCell(0, 10, "DREAM DEPOSIT SUMMARY", "", "C", false)
-	//pdf.SetY(y + h + 5)
-	pdf.SetFont("Arial", "B", 10)
-	name := "Name"
-	pdf.MultiCell(70, 5, name+fakename.Name, "", "L", false)
-
-	pdf.MultiCell(50, 5, fmt.Sprintf("Address:%s\t", fakename.Add.Line1+","), "", "L", false)
-
-	pdf.MultiCell(50, 4, fakename.Add.Line2+",", "", "C", false)
-	pdf.MultiCell(50, 4, fakename.Add.Line3+",", "", "C", false)
-	pdf.MultiCell(50, 4, fakename.Add.City+",", "", "C", false)
-	pdf.MultiCell(50, 4, fakename.Add.State+",", "", "C", false)
-	pdf.MultiCell(50, 4, fakename.Add.Country+",", "", "C", false)
-	pdf.MultiCell(50, 4, fakename.Add.Pincode+",", "", "C", false)
-	//to add space between address and table
-	pdf.MultiCell(50, 10, "", "", "", false)
-	//fmt.Sprintf("Name:%s\t", fakename.Name)
-	//pdf.SetY(y + h + 10)
-	pdf.SetFont("Arial", "", 7)
-
-	// Generate table header
-	pdf.CellFormat(15, 15, "Sr.No", "1", 0, "C", false, 0, "")
-	pdf.CellFormat(25, 15, "Account No", "1", 0, "C", false, 0, "")
-	pdf.CellFormat(20, 15, "Branch", "1", 0, "C", false, 0, "")
-	pdf.CellFormat(25, 15, "Name", "1", 0, "C", false, 0, "")
-	pdf.CellFormat(25, 15, "CCY", "1", 0, "C", false, 0, "")
-	pdf.CellFormat(40, 15, "Start date", "1", 0, "C", false, 0, "")
-	pdf.CellFormat(30, 15, "Installment Amount", "1", 0, "C", false, 0, "")
-	pdf.CellFormat(20, 15, "Maturity Amount", "1", 0, "C", false, 0, "")
-	pdf.CellFormat(20, 15, "Date of Maturity ", "1", 0, "C", false, 0, "")
-	pdf.CellFormat(15, 15, "Tenure", "1", 0, "C", false, 0, "")
-	pdf.CellFormat(25, 15, "Rate of Interest", "1", 0, "C", false, 0, "")
-	pdf.CellFormat(25, 15, "Current Principal amt", "1", 1, "C", false, 0, "")
-
-	for id, data := range fakename.Passionfund {
-		fmt.Print("is data gets print")
-
-		pdf.CellFormat(15, 15, fmt.Sprintf("%d", id+1), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(25, 15, fmt.Sprintf("%d", (data.AccountNO)), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(20, 15, data.Branch, "1", 0, "C", false, 0, "")
-		pdf.CellFormat(25, 15, data.Name, "1", 0, "C", false, 0, "")
-		setText(25, 15, pdf, data.CCY)
-		//pdf.CellFormat(25, 15, data.CCY, "1", 0, "C", false, 0, "")
-
-		pdf.CellFormat(40, 15, data.StartDate, "1", 0, "C", false, 0, "")
-		pdf.CellFormat(30, 15, fmt.Sprintf("%d", (data.InstallmentAmount)), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(20, 15, fmt.Sprintf("%d", (data.MaturityAmt)), "1", 0, "C", false, 0, "")
-		setText(20, 15, pdf, data.DateOfMaturity)
-		//pdf.CellFormat(20, 15, data.DateOfMaturity, "1", 0, "C", false, 0, "")
-		pdf.CellFormat(15, 15, fmt.Sprintf("%d", (data.Tenure)), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(25, 15, fmt.Sprintf("%d", (data.RateOfInterest)), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(25, 15, fmt.Sprintf("%d", (data.CurrentPrincipalAmt)), "1", 1, "C", false, 0, "")
-
-	}
-	//}
-	currDepositBalance := "1)Current Deposit Balance-Is the total installment amount paid till date towards funding ofthe Dream Deposit."
-	line2 := "2)In case of default/delay in payments of installments,the maturity value mentioned above will be different from the actual maturity value."
-	//pdf.SetY(-1)
-	pdf.MultiCell(50, 10, "", "", "", false)
-
-	//pdf.SetY(y + h + 10)
-
+	name := "Name:"
+	pdf.CellFormat(18, 5, name, "", 0, "L", false, 0, "")
 	pdf.SetFont("Arial", "", 10)
-	pdf.MultiCell(0, 5, currDepositBalance, "", "", false)
-	pdf.MultiCell(0, 5, line2, "", "", false)
+	pdf.CellFormat(65.3, 5, fakename.Name, "", 1, "L", false, 0, "")
+	//pdf.SetY(42)
+	pdf.SetFont("Arial", "B", 10)
 
+	address := "Address:"
+
+	pdf.CellFormat(18, 5, address, "", 0, "L", false, 0, "")
+	pdf.SetFont("Arial", "", 10)
+
+	pdf.CellFormat(65.3, 5, fakename.Add.Line1, "", 1, "L", false, 0, "")
+	pdf.SetX(20.1)
+	pdf.CellFormat(55, 5, fakename.Add.Line2+",", "", 1, "L", false, 0, "")
+	pdf.SetX(20.1)
+	pdf.CellFormat(55, 5, fakename.Add.Line3+",", "", 1, "L", false, 0, "")
+	pdf.SetX(20.1)
+	pdf.CellFormat(55, 5, fakename.Add.City+",", "", 1, "L", false, 0, "")
+	pdf.SetX(20.1)
+	pdf.CellFormat(55, 5, fakename.Add.State+",", "", 1, "L", false, 0, "")
+	pdf.SetX(20.1)
+	pdf.CellFormat(55, 5, fakename.Add.Country+",", "", 1, "L", false, 0, "")
+	pdf.SetX(20.1)
+	pdf.CellFormat(55, 5, fakename.Add.Pincode, "", 1, "L", false, 0, "")
+
+	//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+	header := [colCount]string{"Sr.no", "Account No.", "Branch Name", "Name", "CCY", "Start Date", "Installment Amount", "Maturity Amount", "Date of Maturity", "Tenure (Months)", "Rate of Interest", "Current Principal Amount*"}
+
+	// strList := loremList()
+	pdf.SetMargins(marginH, 15, marginH)
+	pdf.SetFont("Arial", "", 14)
+	//pdf.AddPage()
+
+	colWd := []float64{15, 25, 20, 25, 10, 40, 30, 25, 25, 25, 25, 20}
+
+	// Headers
+	pdf.SetTextColor(224, 224, 224)
+	pdf.SetFillColor(64, 64, 64)
+	for colJ := 0; colJ < colCount; colJ++ {
+		// cell.str = string(header[colJ])
+		// 	cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
+		// 	cell.ht = float64(len(cell.list)) * lineHt
+		// 	if cell.ht > maxHt {
+		// 		maxHt = cell.ht
+		// 	}
+		// 	cellList[count] = cell
+		pdf.CellFormat(colWd[colJ], 10, header[colJ], "1", 0, "CM", true, 0, "")
+	}
+	pdf.Ln(-1)
+	pdf.SetTextColor(24, 24, 24)
+	pdf.SetFillColor(255, 255, 255)
+
+	// Rows
+	y = pdf.GetY()
+	srNo := 1
+	for _, fund := range fakename.Passionfund {
+		maxHt := lineHt
+		// Cell height calculation loop
+		count := 0
+		cell.str = strconv.Itoa(srNo)
+		cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
+		cell.ht = float64(len(cell.list)) * lineHt
+		if cell.ht > maxHt {
+			maxHt = cell.ht
+		}
+		cellList[count] = cell
+		count++
+
+		cell.str = fund.AccountNO
+		cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
+		cell.ht = float64(len(cell.list)) * lineHt
+		if cell.ht > maxHt {
+			maxHt = cell.ht
+		}
+		cellList[count] = cell
+		count++
+
+		cell.str = fund.Branch
+		cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
+		cell.ht = float64(len(cell.list)) * lineHt
+		if cell.ht > maxHt {
+			maxHt = cell.ht
+		}
+		cellList[count] = cell
+		count++
+
+		cell.str = fund.Name
+		cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
+		cell.ht = float64(len(cell.list)) * lineHt
+		if cell.ht > maxHt {
+			maxHt = cell.ht
+		}
+		cellList[count] = cell
+		count++
+
+		cell.str = fund.CCY
+		cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
+		cell.ht = float64(len(cell.list)) * lineHt
+		if cell.ht > maxHt {
+			maxHt = cell.ht
+		}
+		cellList[count] = cell
+		count++
+
+		cell.str = fund.StartDate
+		cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
+		cell.ht = float64(len(cell.list)) * lineHt
+		if cell.ht > maxHt {
+			maxHt = cell.ht
+		}
+		cellList[count] = cell
+		count++
+
+		cell.str = fund.InstallmentAmount
+		cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
+		cell.ht = float64(len(cell.list)) * lineHt
+		if cell.ht > maxHt {
+			maxHt = cell.ht
+		}
+		cellList[count] = cell
+		count++
+
+		cell.str = fund.MaturityAmt
+		cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
+		cell.ht = float64(len(cell.list)) * lineHt
+		if cell.ht > maxHt {
+			maxHt = cell.ht
+		}
+		cellList[count] = cell
+		count++
+
+		cell.str = fund.DateOfMaturity
+		cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
+		cell.ht = float64(len(cell.list)) * lineHt
+		if cell.ht > maxHt {
+			maxHt = cell.ht
+		}
+		cellList[count] = cell
+		count++
+
+		cell.str = fund.Tenure
+		cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
+		cell.ht = float64(len(cell.list)) * lineHt
+		if cell.ht > maxHt {
+			maxHt = cell.ht
+		}
+		cellList[count] = cell
+		count++
+
+		cell.str = fund.RateOfInterest
+		cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
+		cell.ht = float64(len(cell.list)) * lineHt
+		if cell.ht > maxHt {
+			maxHt = cell.ht
+		}
+		cellList[count] = cell
+		count++
+
+		cell.str = fund.CurrentPrincipalAmt
+		cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
+		cell.ht = float64(len(cell.list)) * lineHt
+		if cell.ht > maxHt {
+			maxHt = cell.ht
+		}
+		cellList[count] = cell
+		count++
+		// Cell render loop
+		count = 0
+
+		x := marginH
+		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
+		cell = cellList[count]
+		cellY := y + cellGap + (maxHt-cell.ht)/2
+		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+			pdf.SetXY(x+cellGap, cellY)
+			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+				"C", false, 0, "")
+			cellY += lineHt
+		}
+		x += colWd[count]
+		count++
+
+		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
+		cell = cellList[count]
+		cellY = y + cellGap + (maxHt-cell.ht)/2
+		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+			pdf.SetXY(x+cellGap, cellY)
+			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+				"C", false, 0, "")
+			cellY += lineHt
+		}
+		x += colWd[count]
+		count++
+		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
+		cell = cellList[count]
+		cellY = y + cellGap + (maxHt-cell.ht)/2
+		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+			pdf.SetXY(x+cellGap, cellY)
+			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+				"C", false, 0, "")
+			cellY += lineHt
+		}
+		x += colWd[count]
+		count++
+		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
+		cell = cellList[count]
+		cellY = y + cellGap + (maxHt-cell.ht)/2
+		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+			pdf.SetXY(x+cellGap, cellY)
+			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+				"C", false, 0, "")
+			cellY += lineHt
+		}
+		x += colWd[count]
+		count++
+		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
+		cell = cellList[count]
+		cellY = y + cellGap + (maxHt-cell.ht)/2
+		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+			pdf.SetXY(x+cellGap, cellY)
+			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+				"C", false, 0, "")
+			cellY += lineHt
+		}
+		x += colWd[count]
+		count++
+		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
+		cell = cellList[count]
+		cellY = y + cellGap + (maxHt-cell.ht)/2
+		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+			pdf.SetXY(x+cellGap, cellY)
+			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+				"C", false, 0, "")
+			cellY += lineHt
+		}
+		x += colWd[count]
+		count++
+		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
+		cell = cellList[count]
+		cellY = y + cellGap + (maxHt-cell.ht)/2
+		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+			pdf.SetXY(x+cellGap, cellY)
+			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+				"C", false, 0, "")
+			cellY += lineHt
+		}
+		x += colWd[count]
+		count++
+		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
+		cell = cellList[count]
+		cellY = y + cellGap + (maxHt-cell.ht)/2
+		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+			pdf.SetXY(x+cellGap, cellY)
+			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+				"C", false, 0, "")
+			cellY += lineHt
+		}
+		x += colWd[count]
+		count++
+		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
+		cell = cellList[count]
+		cellY = y + cellGap + (maxHt-cell.ht)/2
+		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+			pdf.SetXY(x+cellGap, cellY)
+			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+				"C", false, 0, "")
+			cellY += lineHt
+		}
+		x += colWd[count]
+		count++
+		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
+		cell = cellList[count]
+		cellY = y + cellGap + (maxHt-cell.ht)/2
+		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+			pdf.SetXY(x+cellGap, cellY)
+			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+				"C", false, 0, "")
+			cellY += lineHt
+		}
+		x += colWd[count]
+		count++
+		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
+		cell = cellList[count]
+		cellY = y + cellGap + (maxHt-cell.ht)/2
+		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+			pdf.SetXY(x+cellGap, cellY)
+			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+				"C", false, 0, "")
+			cellY += lineHt
+		}
+		x += colWd[count]
+		count++
+		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
+		cell = cellList[count]
+		cellY = y + cellGap + (maxHt-cell.ht)/2
+		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+			pdf.SetXY(x+cellGap, cellY)
+			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+				"C", false, 0, "")
+			cellY += lineHt
+		}
+		x += colWd[count]
+		count++
+		y += maxHt + cellGap + cellGap
+		srNo++
+	}
+
+	/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	err := pdf.OutputFileAndClose("FDSummary.pdf")
 	if err != nil {
 		fmt.Println("ok here 4")
@@ -167,20 +433,24 @@ func GeneratePDF(fakename model.FakeName) error {
 
 }
 
-func setText(w float64, h float64, pdf *gofpdf.Fpdf, text string) {
-	x := pdf.GetX()
-	y := pdf.GetY()
-	width, _ := pdf.GetPageSize()
-	_, _, right, _ := pdf.GetMargins()
-	if x+w > width-right {
+// func setText(w float64, h float64, pdf *gofpdf.Fpdf, text string) {
+// 	x := pdf.GetX()
+// 	y := pdf.GetY()
+// 	width, _ := pdf.GetPageSize()
+// 	_, _, right, _ := pdf.GetMargins()
+// 	if x+w > width-right {
+// 		x = pdf.GetX() - w + 3
+// 		// move to the next line in the same cell
+// 		y = y + h
 
-		// 	// move to the next line in the same row
-		pdf.SetXY(x, y+h)
+// 		// 	// move to the next line in the same row
+// 		//	pdf.SetXY(x, y+h)
+// 		pdf.SetXY(x, y)
 
-		// print the remaining text
-		pdf.CellFormat(w, h, text, "1", 0, "T", false, 0, "")
-	} else {
-		// print the text in the current cell
-		pdf.CellFormat(w, h, text, "1", 0, "T", false, 0, "")
-	}
-}
+// 		// print the remaining text
+// 		pdf.CellFormat(w, h, text, "1", 0, "C", false, 0, "")
+// 	} else {
+// 		// print the text in the current cell
+// 		pdf.CellFormat(w, h, text, "1", 0, "C", false, 0, "")
+// 	}
+// }

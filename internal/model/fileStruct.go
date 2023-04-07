@@ -31,15 +31,15 @@ type FakeName struct {
 }
 
 type FakeData struct {
-	AccountNO           int
+	AccountNO           string
 	Branch              string
 	Name                string
 	CCY                 string
 	StartDate           string
-	InstallmentAmount   int
-	MaturityAmt         int
+	InstallmentAmount   string
+	MaturityAmt         string
 	DateOfMaturity      string
-	Tenure              int
-	RateOfInterest      int
-	CurrentPrincipalAmt int
+	Tenure              string
+	RateOfInterest      string
+	CurrentPrincipalAmt string
 }

@@ -3,7 +3,6 @@ module github.com/GauravMakhijani/MyPassionFundSummary
 go 1.18
 
 require (
-	github.com/google/uuid v1.3.0
 	github.com/gorilla/mux v1.8.0
 	github.com/jaswdr/faker v1.16.0
 	github.com/jung-kurt/gofpdf v1.16.2
