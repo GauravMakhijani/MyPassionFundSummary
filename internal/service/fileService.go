@@ -86,16 +86,16 @@ func GeneratePDF(fakename model.FakeName) (err error) {
 		newPageStart = 10.0
 	)
 
-	type cellType struct {
-		str  string
-		list [][]byte
-		ht   float64
-	}
 	var (
-		cellList [colCount]cellType
-		cell     cellType
+		cellList [colCount]model.CellType
+		cell     model.CellType
 	)
-	pdf := gofpdf.New("L", "mm", "A4", "")
+	pageStyle := model.PageStyle{
+		PageOrientation: "L",
+		UnitStr:         "mm",
+		PageSize:        "A4",
+	}
+	pdf := gofpdf.New(pageStyle.PageOrientation, pageStyle.UnitStr, pageStyle.PageSize, "")
 	pdf.AddPage()
 	//Styling
 	pdf.SetFont("Arial", "", 10)
@@ -154,11 +154,11 @@ func GeneratePDF(fakename model.FakeName) (err error) {
 	maxHt := lineHt
 	y := pdf.GetY()
 	for col, val := range header {
-		cell.str = val
-		cell.list = pdf.SplitLines([]byte(cell.str), colWd[col]-cellGap-cellGap)
-		cell.ht = float64(len(cell.list)) * lineHt
-		if cell.ht > maxHt {
-			maxHt = cell.ht
+		cell.Str = val
+		cell.List = pdf.SplitLines([]byte(cell.Str), colWd[col]-cellGap-cellGap)
+		cell.Ht = float64(len(cell.List)) * lineHt
+		if cell.Ht > maxHt {
+			maxHt = cell.Ht
 		}
 		cellList[col] = cell
 	}
@@ -166,10 +166,10 @@ func GeneratePDF(fakename model.FakeName) (err error) {
 	for col := range header {
 		pdf.Rect(x, y, colWd[col], maxHt+cellGap+cellGap, "D")
 		cell = cellList[col]
-		cellY := y + cellGap + (maxHt-cell.ht)/2
-		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+		cellY := y + cellGap + (maxHt-cell.Ht)/2
+		for splitJ := 0; splitJ < len(cell.List); splitJ++ {
 			pdf.SetXY(x+cellGap, cellY)
-			pdf.CellFormat(colWd[col]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+			pdf.CellFormat(colWd[col]-cellGap-cellGap, lineHt, string(cell.List[splitJ]), "", 0,
 				"C", false, 0, "")
 			cellY += lineHt
 		}
@@ -186,112 +186,112 @@ func GeneratePDF(fakename model.FakeName) (err error) {
 	srNo := 1
 	for _, fund := range fakename.Passionfund {
 		maxHt := lineHt
-		// Cell height calculation loop
+		// Cell heigHt calculation loop
 		count := 0
-		cell.str = strconv.Itoa(srNo)
-		cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
-		cell.ht = float64(len(cell.list)) * lineHt
-		if cell.ht > maxHt {
-			maxHt = cell.ht
+		cell.Str = strconv.Itoa(srNo)
+		cell.List = pdf.SplitLines([]byte(cell.Str), colWd[count]-cellGap-cellGap)
+		cell.Ht = float64(len(cell.List)) * lineHt
+		if cell.Ht > maxHt {
+			maxHt = cell.Ht
 		}
 		cellList[count] = cell
 		count++
 
-		cell.str = fund.AccountNO
-		cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
-		cell.ht = float64(len(cell.list)) * lineHt
-		if cell.ht > maxHt {
-			maxHt = cell.ht
+		cell.Str = fund.AccountNO
+		cell.List = pdf.SplitLines([]byte(cell.Str), colWd[count]-cellGap-cellGap)
+		cell.Ht = float64(len(cell.List)) * lineHt
+		if cell.Ht > maxHt {
+			maxHt = cell.Ht
 		}
 		cellList[count] = cell
 		count++
 
-		cell.str = fund.Branch
-		cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
-		cell.ht = float64(len(cell.list)) * lineHt
-		if cell.ht > maxHt {
-			maxHt = cell.ht
+		cell.Str = fund.Branch
+		cell.List = pdf.SplitLines([]byte(cell.Str), colWd[count]-cellGap-cellGap)
+		cell.Ht = float64(len(cell.List)) * lineHt
+		if cell.Ht > maxHt {
+			maxHt = cell.Ht
 		}
 		cellList[count] = cell
 		count++
 
-		cell.str = fund.Name
-		cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
-		cell.ht = float64(len(cell.list)) * lineHt
-		if cell.ht > maxHt {
-			maxHt = cell.ht
+		cell.Str = fund.Name
+		cell.List = pdf.SplitLines([]byte(cell.Str), colWd[count]-cellGap-cellGap)
+		cell.Ht = float64(len(cell.List)) * lineHt
+		if cell.Ht > maxHt {
+			maxHt = cell.Ht
 		}
 		cellList[count] = cell
 		count++
 
-		cell.str = fund.CCY
-		cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
-		cell.ht = float64(len(cell.list)) * lineHt
-		if cell.ht > maxHt {
-			maxHt = cell.ht
+		cell.Str = fund.CCY
+		cell.List = pdf.SplitLines([]byte(cell.Str), colWd[count]-cellGap-cellGap)
+		cell.Ht = float64(len(cell.List)) * lineHt
+		if cell.Ht > maxHt {
+			maxHt = cell.Ht
 		}
 		cellList[count] = cell
 		count++
 
-		cell.str = formatDate(fund.StartDate)
-		cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
-		cell.ht = float64(len(cell.list)) * lineHt
-		if cell.ht > maxHt {
-			maxHt = cell.ht
+		cell.Str = formatDate(fund.StartDate)
+		cell.List = pdf.SplitLines([]byte(cell.Str), colWd[count]-cellGap-cellGap)
+		cell.Ht = float64(len(cell.List)) * lineHt
+		if cell.Ht > maxHt {
+			maxHt = cell.Ht
 		}
 		cellList[count] = cell
 		count++
 
-		cell.str = fund.InstallmentAmount
-		cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
-		cell.ht = float64(len(cell.list)) * lineHt
-		if cell.ht > maxHt {
-			maxHt = cell.ht
+		cell.Str = fund.InstallmentAmount
+		cell.List = pdf.SplitLines([]byte(cell.Str), colWd[count]-cellGap-cellGap)
+		cell.Ht = float64(len(cell.List)) * lineHt
+		if cell.Ht > maxHt {
+			maxHt = cell.Ht
 		}
 		cellList[count] = cell
 		count++
 
-		cell.str = fund.MaturityAmt
-		cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
-		cell.ht = float64(len(cell.list)) * lineHt
-		if cell.ht > maxHt {
-			maxHt = cell.ht
+		cell.Str = fund.MaturityAmt
+		cell.List = pdf.SplitLines([]byte(cell.Str), colWd[count]-cellGap-cellGap)
+		cell.Ht = float64(len(cell.List)) * lineHt
+		if cell.Ht > maxHt {
+			maxHt = cell.Ht
 		}
 		cellList[count] = cell
 		count++
 
-		cell.str = formatDate(fund.DateOfMaturity)
-		cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
-		cell.ht = float64(len(cell.list)) * lineHt
-		if cell.ht > maxHt {
-			maxHt = cell.ht
+		cell.Str = formatDate(fund.DateOfMaturity)
+		cell.List = pdf.SplitLines([]byte(cell.Str), colWd[count]-cellGap-cellGap)
+		cell.Ht = float64(len(cell.List)) * lineHt
+		if cell.Ht > maxHt {
+			maxHt = cell.Ht
 		}
 		cellList[count] = cell
 		count++
 
-		cell.str = fund.Tenure
-		cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
-		cell.ht = float64(len(cell.list)) * lineHt
-		if cell.ht > maxHt {
-			maxHt = cell.ht
+		cell.Str = fund.Tenure
+		cell.List = pdf.SplitLines([]byte(cell.Str), colWd[count]-cellGap-cellGap)
+		cell.Ht = float64(len(cell.List)) * lineHt
+		if cell.Ht > maxHt {
+			maxHt = cell.Ht
 		}
 		cellList[count] = cell
 		count++
 
-		cell.str = fund.RateOfInterest
-		cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
-		cell.ht = float64(len(cell.list)) * lineHt
-		if cell.ht > maxHt {
-			maxHt = cell.ht
+		cell.Str = fund.RateOfInterest
+		cell.List = pdf.SplitLines([]byte(cell.Str), colWd[count]-cellGap-cellGap)
+		cell.Ht = float64(len(cell.List)) * lineHt
+		if cell.Ht > maxHt {
+			maxHt = cell.Ht
 		}
 		cellList[count] = cell
 		count++
 
-		cell.str = fund.CurrentPrincipalAmt
-		cell.list = pdf.SplitLines([]byte(cell.str), colWd[count]-cellGap-cellGap)
-		cell.ht = float64(len(cell.list)) * lineHt
-		if cell.ht > maxHt {
-			maxHt = cell.ht
+		cell.Str = fund.CurrentPrincipalAmt
+		cell.List = pdf.SplitLines([]byte(cell.Str), colWd[count]-cellGap-cellGap)
+		cell.Ht = float64(len(cell.List)) * lineHt
+		if cell.Ht > maxHt {
+			maxHt = cell.Ht
 		}
 		cellList[count] = cell
 		count++
@@ -301,10 +301,10 @@ func GeneratePDF(fakename model.FakeName) (err error) {
 		x := marginH
 		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
 		cell = cellList[count]
-		cellY := y + cellGap + (maxHt-cell.ht)/2
-		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+		cellY := y + cellGap + (maxHt-cell.Ht)/2
+		for splitJ := 0; splitJ < len(cell.List); splitJ++ {
 			pdf.SetXY(x+cellGap, cellY)
-			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.List[splitJ]), "", 0,
 				"C", false, 0, "")
 			cellY += lineHt
 		}
@@ -313,10 +313,10 @@ func GeneratePDF(fakename model.FakeName) (err error) {
 
 		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
 		cell = cellList[count]
-		cellY = y + cellGap + (maxHt-cell.ht)/2
-		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+		cellY = y + cellGap + (maxHt-cell.Ht)/2
+		for splitJ := 0; splitJ < len(cell.List); splitJ++ {
 			pdf.SetXY(x+cellGap, cellY)
-			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.List[splitJ]), "", 0,
 				"C", false, 0, "")
 			cellY += lineHt
 		}
@@ -324,10 +324,10 @@ func GeneratePDF(fakename model.FakeName) (err error) {
 		count++
 		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
 		cell = cellList[count]
-		cellY = y + cellGap + (maxHt-cell.ht)/2
-		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+		cellY = y + cellGap + (maxHt-cell.Ht)/2
+		for splitJ := 0; splitJ < len(cell.List); splitJ++ {
 			pdf.SetXY(x+cellGap, cellY)
-			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.List[splitJ]), "", 0,
 				"C", false, 0, "")
 			cellY += lineHt
 		}
@@ -335,10 +335,10 @@ func GeneratePDF(fakename model.FakeName) (err error) {
 		count++
 		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
 		cell = cellList[count]
-		cellY = y + cellGap + (maxHt-cell.ht)/2
-		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+		cellY = y + cellGap + (maxHt-cell.Ht)/2
+		for splitJ := 0; splitJ < len(cell.List); splitJ++ {
 			pdf.SetXY(x+cellGap, cellY)
-			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.List[splitJ]), "", 0,
 				"C", false, 0, "")
 			cellY += lineHt
 		}
@@ -346,10 +346,10 @@ func GeneratePDF(fakename model.FakeName) (err error) {
 		count++
 		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
 		cell = cellList[count]
-		cellY = y + cellGap + (maxHt-cell.ht)/2
-		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+		cellY = y + cellGap + (maxHt-cell.Ht)/2
+		for splitJ := 0; splitJ < len(cell.List); splitJ++ {
 			pdf.SetXY(x+cellGap, cellY)
-			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.List[splitJ]), "", 0,
 				"C", false, 0, "")
 			cellY += lineHt
 		}
@@ -357,10 +357,10 @@ func GeneratePDF(fakename model.FakeName) (err error) {
 		count++
 		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
 		cell = cellList[count]
-		cellY = y + cellGap + (maxHt-cell.ht)/2
-		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+		cellY = y + cellGap + (maxHt-cell.Ht)/2
+		for splitJ := 0; splitJ < len(cell.List); splitJ++ {
 			pdf.SetXY(x+cellGap, cellY)
-			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.List[splitJ]), "", 0,
 				"C", false, 0, "")
 			cellY += lineHt
 		}
@@ -368,10 +368,10 @@ func GeneratePDF(fakename model.FakeName) (err error) {
 		count++
 		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
 		cell = cellList[count]
-		cellY = y + cellGap + (maxHt-cell.ht)/2
-		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+		cellY = y + cellGap + (maxHt-cell.Ht)/2
+		for splitJ := 0; splitJ < len(cell.List); splitJ++ {
 			pdf.SetXY(x+cellGap, cellY)
-			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.List[splitJ]), "", 0,
 				"C", false, 0, "")
 			cellY += lineHt
 		}
@@ -379,10 +379,10 @@ func GeneratePDF(fakename model.FakeName) (err error) {
 		count++
 		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
 		cell = cellList[count]
-		cellY = y + cellGap + (maxHt-cell.ht)/2
-		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+		cellY = y + cellGap + (maxHt-cell.Ht)/2
+		for splitJ := 0; splitJ < len(cell.List); splitJ++ {
 			pdf.SetXY(x+cellGap, cellY)
-			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.List[splitJ]), "", 0,
 				"C", false, 0, "")
 			cellY += lineHt
 		}
@@ -390,10 +390,10 @@ func GeneratePDF(fakename model.FakeName) (err error) {
 		count++
 		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
 		cell = cellList[count]
-		cellY = y + cellGap + (maxHt-cell.ht)/2
-		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+		cellY = y + cellGap + (maxHt-cell.Ht)/2
+		for splitJ := 0; splitJ < len(cell.List); splitJ++ {
 			pdf.SetXY(x+cellGap, cellY)
-			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.List[splitJ]), "", 0,
 				"C", false, 0, "")
 			cellY += lineHt
 		}
@@ -401,10 +401,10 @@ func GeneratePDF(fakename model.FakeName) (err error) {
 		count++
 		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
 		cell = cellList[count]
-		cellY = y + cellGap + (maxHt-cell.ht)/2
-		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+		cellY = y + cellGap + (maxHt-cell.Ht)/2
+		for splitJ := 0; splitJ < len(cell.List); splitJ++ {
 			pdf.SetXY(x+cellGap, cellY)
-			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.List[splitJ]), "", 0,
 				"C", false, 0, "")
 			cellY += lineHt
 		}
@@ -412,10 +412,10 @@ func GeneratePDF(fakename model.FakeName) (err error) {
 		count++
 		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
 		cell = cellList[count]
-		cellY = y + cellGap + (maxHt-cell.ht)/2
-		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+		cellY = y + cellGap + (maxHt-cell.Ht)/2
+		for splitJ := 0; splitJ < len(cell.List); splitJ++ {
 			pdf.SetXY(x+cellGap, cellY)
-			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.List[splitJ]), "", 0,
 				"C", false, 0, "")
 			cellY += lineHt
 		}
@@ -423,10 +423,10 @@ func GeneratePDF(fakename model.FakeName) (err error) {
 		count++
 		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
 		cell = cellList[count]
-		cellY = y + cellGap + (maxHt-cell.ht)/2
-		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+		cellY = y + cellGap + (maxHt-cell.Ht)/2
+		for splitJ := 0; splitJ < len(cell.List); splitJ++ {
 			pdf.SetXY(x+cellGap, cellY)
-			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.List[splitJ]), "", 0,
 				"C", false, 0, "")
 			cellY += lineHt
 		}

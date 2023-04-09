@@ -44,8 +44,16 @@ type FakeData struct {
 	CurrentPrincipalAmt string
 }
 
-type cellType struct {
-	str  string
-	list [][]byte
-	ht   float64
+type PageStyle struct{
+	PageOrientation string
+	UnitStr string
+	PageSize string
 }
+
+type CellType struct {
+	Str  string
+	List [][]byte
+	Ht   float64
+}
+
+
