@@ -31,6 +31,7 @@ func NewFileService() FileService {
 }
 
 func generateFakeData() (user model.UserData){
+
     fake := faker.New()
     user.Name = fake.Person().FirstName()
     user.Address =  model.Address{
