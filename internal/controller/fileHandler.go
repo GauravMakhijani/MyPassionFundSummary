@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -55,12 +56,15 @@ func DownloadMyPassionFundSummaryHandler(deps *server.Dependencies) http.Handler
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var downloadRequest model.FileDownloadRequest
 		err := json.NewDecoder(r.Body).Decode(&downloadRequest)
+		fmt.Print("hello rutuja")
 		if err != nil {
 			response := model.Response{
 				Message: literals.ErrInvalidInput,
 			}
 			api.Response(w, http.StatusBadRequest, response)
 		}
+
+		fmt.Println("hiii>>>>>>>>>>>>")
 
 		switch downloadRequest.FormatType {
 		case literals.PDFFormat:

@@ -43,3 +43,17 @@ type FakeData struct {
 	RateOfInterest      string
 	CurrentPrincipalAmt string
 }
+
+type PageStyle struct{
+	PageOrientation string
+	UnitStr string
+	PageSize string
+}
+
+type CellType struct {
+	Str  string
+	List [][]byte
+	Ht   float64
+}
+
+

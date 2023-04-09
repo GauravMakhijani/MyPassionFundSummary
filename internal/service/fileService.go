@@ -1,9 +1,10 @@
 package service
 
 import (
-	"fmt"
+	"errors"
 
 	"log"
+
 	"strconv"
 	"time"
 
@@ -45,16 +46,14 @@ var (
 )
 
 func formatDate(date string) string {
-    t,_ := time.Parse(time.RFC3339 ,date)
-    return t.Format(literals.DateFormat)
+	t, _ := time.Parse(time.RFC3339, date)
+	return t.Format(literals.DateFormat)
 }
 func GenerateFakeData() (user model.FakeName, err error) {
-	//fakename := []model.FakeName{}
-	//generate fake name and address
 
 	fake := faker.New()
-    noOfData := 20
-	// fakenames := model.FakeName{
+	noOfData := 20
+
 	user.Name = fake.Person().Name()
 	user.Add = model.Address{
 		Line1:   fake.Address().BuildingNumber(),
@@ -69,16 +68,16 @@ func GenerateFakeData() (user model.FakeName, err error) {
 	currTime := time.Now()
 	for i := 0; i < noOfData; i++ {
 		user.Passionfund[i].AccountNO = strconv.Itoa(fake.RandomNumber(10))
-        user.Passionfund[i].Branch = fake.Address().City()
-        user.Passionfund[i].Name = fake.Person().FirstName()
-        user.Passionfund[i].CCY = "INR"
-        user.Passionfund[i].StartDate = fake.Time().RFC3339(currTime)
-        user.Passionfund[i].InstallmentAmount = strconv.FormatFloat(fake.RandomFloat(2,1000,1000000),'f',2,64)
-        user.Passionfund[i].MaturityAmt = strconv.FormatFloat(fake.RandomFloat(2,1000,1000000),'f',2,64)
-        user.Passionfund[i].DateOfMaturity = fake.Time().RFC3339(currTime)
-        user.Passionfund[i].Tenure = strconv.Itoa(fake.RandomNumber(2))
-        user.Passionfund[i].RateOfInterest = strconv.FormatFloat(fake.RandomFloat(2,5,20),'f',2,64)
-        user.Passionfund[i].CurrentPrincipalAmt = strconv.FormatFloat(fake.RandomFloat(2,1000,1000000),'f',2,64)
+		user.Passionfund[i].Branch = fake.Address().City()
+		user.Passionfund[i].Name = fake.Person().FirstName()
+		user.Passionfund[i].CCY = "INR"
+		user.Passionfund[i].StartDate = fake.Time().RFC3339(currTime)
+		user.Passionfund[i].InstallmentAmount = strconv.FormatFloat(fake.RandomFloat(2, 1000, 1000000), 'f', 2, 64)
+		user.Passionfund[i].MaturityAmt = strconv.FormatFloat(fake.RandomFloat(2, 1000, 1000000), 'f', 2, 64)
+		user.Passionfund[i].DateOfMaturity = fake.Time().RFC3339(currTime)
+		user.Passionfund[i].Tenure = strconv.Itoa(fake.RandomNumber(2))
+		user.Passionfund[i].RateOfInterest = strconv.FormatFloat(fake.RandomFloat(2, 5, 20), 'f', 2, 64)
+		user.Passionfund[i].CurrentPrincipalAmt = strconv.FormatFloat(fake.RandomFloat(2, 1000, 1000000), 'f', 2, 64)
 	}
 
 	return
@@ -191,7 +190,7 @@ func GeneratePDF(fakename model.FakeName) error {
 	pdf.AddPage()
 	//Styling
 	pdf.SetFont("Arial", "", 10)
-    pdf.SetMargins(marginH, 15, marginH)
+	pdf.SetMargins(marginH, 10, marginH)
 
 	pdf.SetTitle("MyPassionFundSummary", true)
 
@@ -203,28 +202,40 @@ func GeneratePDF(fakename model.FakeName) error {
 		AllowNegativePosition: true,
 	}
 	pdf.ImageOptions(".././images.png", ximg, yimg, wimg, himg, false, imageOptions, 0, "")
-	pdf.SetY(35)
+	pdf.SetY(30)
 
 	pdf.SetFont("Arial", "B", 10)
-	pdf.MultiCell(0, 10, "DREAM DEPOSIT SUMMARY", "", "C", false)
+	pdf.MultiCell(100, 10, "DREAM DEPOSIT SUMMARY", "", "C", false)
 
-	pdf.SetFont("Arial", "B", 10)
-	name := "Name"
-	pdf.MultiCell(70, 5, name+fakename.Name, "", "L", false)
+	pdf.SetFont("Arial", "B", 9)
+	name := "Name:"
+	pdf.CellFormat(18, 5, name, "", 0, "L", false, 0, "")
+	pdf.SetFont("Arial", "", 9)
+	pdf.CellFormat(65.3, 5, fakename.Name, "", 1, "L", false, 0, "")
+	pdf.SetFont("Arial", "B", 9)
 
-	pdf.MultiCell(50, 5, fmt.Sprintf("Address:%s\t", fakename.Add.Line1+","), "", "L", false)
+	address := "Address:"
+	pdf.CellFormat(18, 5, address, "", 0, "L", false, 0, "")
 
-	pdf.MultiCell(50, 4, fakename.Add.Line2+",", "", "C", false)
-	pdf.MultiCell(50, 4, fakename.Add.Line3+",", "", "C", false)
-	pdf.MultiCell(50, 4, fakename.Add.City+",", "", "C", false)
-	pdf.MultiCell(50, 4, fakename.Add.State+",", "", "C", false)
-	pdf.MultiCell(50, 4, fakename.Add.Country+",", "", "C", false)
-	pdf.MultiCell(50, 4, fakename.Add.Pincode+",", "", "C", false)
+	pdf.SetFont("Arial", "", 9)
 
-    //to add space between address and table
+	pdf.CellFormat(65.3, 5, fakename.Add.Line1, "", 1, "L", false, 0, "")
+	pdf.SetX(22.9)
+	pdf.CellFormat(55, 5, fakename.Add.Line2+",", "", 1, "L", false, 0, "")
+	pdf.SetX(22.9)
+	pdf.CellFormat(55, 5, fakename.Add.Line3+",", "", 1, "L", false, 0, "")
+	pdf.SetX(22.9)
+	pdf.CellFormat(55, 5, fakename.Add.City+",", "", 1, "L", false, 0, "")
+	pdf.SetX(22.9)
+	pdf.CellFormat(55, 5, fakename.Add.State+",", "", 1, "L", false, 0, "")
+	pdf.SetX(22.9)
+	pdf.CellFormat(55, 5, fakename.Add.Country+",", "", 1, "L", false, 0, "")
+	pdf.SetX(22.9)
+	pdf.CellFormat(55, 5, fakename.Add.Pincode, "", 1, "L", false, 0, "")
+	//to add space between address and table
 	pdf.MultiCell(50, 10, "", "", "", false)
 
-    pdf.SetFont("Arial", "B", 8)
+	pdf.SetFont("Arial", "B", 8)
 
 	// Generate table header
 
@@ -232,10 +243,10 @@ func GeneratePDF(fakename model.FakeName) error {
 
     setHeader(pdf,colWd)
 
-    pdf.Ln(6)
+	pdf.Ln(6)
 	pdf.SetTextColor(24, 24, 24)
 	pdf.SetFillColor(255, 255, 255)
-    pdf.SetFont("Arial", "", 8)
+	pdf.SetFont("Arial", "", 8)
 
 	// Rows
 
@@ -247,9 +258,9 @@ func GeneratePDF(fakename model.FakeName) error {
 
 	err := pdf.OutputFileAndClose("FDSummary.pdf")
 	if err != nil {
+		err = errors.New(literals.ErrCreatingPDF)
 		return err
 	}
 
 	return nil
 }
-
