@@ -21,5 +21,5 @@ func main() {
 	router := controller.InitRouter(deps)
 	server := negroni.Classic()
 	server.UseHandler(router)
-	server.Run(":33001")
+	server.Run(":8080")
 }
