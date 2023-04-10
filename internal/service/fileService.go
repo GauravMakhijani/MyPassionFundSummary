@@ -26,6 +26,27 @@ type FileServiceImpl struct {
 func NewFileService() FileService {
 	return &FileServiceImpl{}
 }
+
+
+const (
+		colCount = 12
+		marginH  = 5.0
+		lineHt   = 4.0
+		cellGap  = 2.0
+        pageMaxUsage = 180.0
+        newPageStart = 10.0
+)
+
+type cellType struct {
+	str  string
+	list [][]byte
+	ht   float64
+}
+var (
+	cellList [colCount]cellType
+	cell     cellType
+)
+
 func formatDate(date string) string {
 	t, _ := time.Parse(time.RFC3339, date)
 	return t.Format(literals.DateFormat)
@@ -78,22 +99,96 @@ func (f *FileServiceImpl) DownloadFile(downloadRequest model.FileDownloadRequest
 	return response, nil
 }
 
-func GeneratePDF(fakename model.FakeName, downloadRequest model.FileDownloadRequest) (passionfund model.PassionFundSummaryResponse, err error) {
-	const (
-		colCount     = 12
-		marginH      = 5.0
-		lineHt       = 4.0
-		cellGap      = 2.0
-		pageMaxUsage = 180.0
-		newPageStart = 10.0
-	)
+func setHeader(pdf *gofpdf.Fpdf, colWd []float64){
+    header := [colCount]string{"Sr.no", "Account No.", "Branch", "Name", "CCY", "Start Date", "Installment Amount", "Maturity Amount", "Date of Maturity", "Tenure (Months)","Rate of Interest", "Current Principal Amount*"}
+    maxHt := lineHt
+    y := pdf.GetY()
+    for col,val:=range(header){
+        cell.str =  val
+        cell.list = pdf.SplitLines([]byte(cell.str), colWd[col]-cellGap-cellGap)
+        cell.ht = float64(len(cell.list)) * lineHt
+        if cell.ht > maxHt {
+			maxHt = cell.ht
+		}
+        cellList[col] = cell
+    }
+    x:=marginH
+    for col:=range(header){
+        pdf.Rect(x, y, colWd[col], maxHt+cellGap+cellGap, "D")
+        cell = cellList[col]
+		cellY := y + cellGap + (maxHt-cell.ht)/2
+		for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+			pdf.SetXY(x+cellGap, cellY)
+			pdf.CellFormat(colWd[col]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+				"C", false, 0, "")
+			cellY += lineHt
+		}
+		x += colWd[col]
+    }
 
-	var (
-		cellList [colCount]model.CellType
-		cell     model.CellType
-	)
+}
 
-	pdf := gofpdf.New(string(literals.PAGEORIENTATION), string(literals.UNITSTR), string(literals.PAGESIZE), "")
+func setRows(pdf *gofpdf.Fpdf,colWd []float64 , fakename model.FakeName){
+    y := pdf.GetY()
+	srNo:= 1
+    for _ ,fund := range fakename.Passionfund{
+		maxHt := lineHt
+		// Cell height calculation loop
+        cellValues:= []string{strconv.Itoa(srNo), fund.AccountNO,fund.Branch,fund.Name,fund.CCY,
+            formatDate(fund.StartDate),fund.InstallmentAmount,fund.MaturityAmt,formatDate(fund.DateOfMaturity),
+            fund.Tenure,fund.RateOfInterest, fund.CurrentPrincipalAmt}
+
+        for index,value := range(cellValues){
+            cell.str = value
+            cell.list = pdf.SplitLines([]byte(cell.str), colWd[index]-cellGap-cellGap)
+			cell.ht = float64(len(cell.list)) * lineHt
+            if cell.ht > maxHt {
+                maxHt = cell.ht
+            }
+            cellList[index] = cell
+        }
+
+		// Cell render loop
+        x := marginH
+
+        for i := range(cellValues){
+            pdf.Rect(x, y, colWd[i], maxHt+cellGap+cellGap, "D")
+			cell = cellList[i]
+			cellY := y + cellGap + (maxHt-cell.ht)/2
+			for splitJ := 0; splitJ < len(cell.list); splitJ++ {
+				pdf.SetXY(x+cellGap, cellY)
+				pdf.CellFormat(colWd[i]-cellGap-cellGap, lineHt, string(cell.list[splitJ]), "", 0,
+					"C", false, 0, "")
+				cellY += lineHt
+			}
+			x += colWd[i]
+        }
+		y += maxHt + cellGap + cellGap
+        if y > pageMaxUsage {
+            pdf.AddPage()
+            y = newPageStart
+        }
+		srNo++
+	}
+
+
+}
+
+
+func setFooter(pdf *gofpdf.Fpdf){
+    currDepositBalance := "* Current Deposit Balance - Is the total installment amount paid till date towards funding of the Dream Deposit."
+	line2 := "* In case of default/delay in payments of installments,the maturity value mentioned above will be different from the actual maturity value."
+	pdf.SetFont("Arial", "", 10)
+	pdf.MultiCell(0, 5, currDepositBalance, "", "", false)
+	pdf.MultiCell(0, 5, line2, "", "", false)
+
+}
+
+func GeneratePDF(fakename model.FakeName) error {
+
+	// var colStrList [colCount]string
+
+    pdf := gofpdf.New("L", "mm", "A4", "")
 	pdf.AddPage()
 	//Styling
 	pdf.SetFont("Arial", "", 10)
@@ -146,33 +241,9 @@ func GeneratePDF(fakename model.FakeName, downloadRequest model.FileDownloadRequ
 
 	// Generate table header
 
-	header := [colCount]string{"Sr.no", "Account No.", "Branch", "Name", "CCY", "Start Date", "Installment Amount", "Maturity Amount", "Date of Maturity", "Tenure (Months)", "Rate of Interest", "Current Principal Amount*"}
-	colWd := []float64{10, 30, 30, 40, 13, 25, 25, 25, 25, 20, 20, 20}
+    colWd := []float64{10,30,30,40,13,25,25,25,25,20,20,20}
 
-	maxHt := lineHt
-	y := pdf.GetY()
-	for col, val := range header {
-		cell.Str = val
-		cell.List = pdf.SplitLines([]byte(cell.Str), colWd[col]-cellGap-cellGap)
-		cell.Ht = float64(len(cell.List)) * lineHt
-		if cell.Ht > maxHt {
-			maxHt = cell.Ht
-		}
-		cellList[col] = cell
-	}
-	x := marginH
-	for col := range header {
-		pdf.Rect(x, y, colWd[col], maxHt+cellGap+cellGap, "D")
-		cell = cellList[col]
-		cellY := y + cellGap + (maxHt-cell.Ht)/2
-		for splitJ := 0; splitJ < len(cell.List); splitJ++ {
-			pdf.SetXY(x+cellGap, cellY)
-			pdf.CellFormat(colWd[col]-cellGap-cellGap, lineHt, string(cell.List[splitJ]), "", 0,
-				"C", false, 0, "")
-			cellY += lineHt
-		}
-		x += colWd[col]
-	}
+    setHeader(pdf,colWd)
 
 	pdf.Ln(6)
 	pdf.SetTextColor(24, 24, 24)
@@ -180,280 +251,17 @@ func GeneratePDF(fakename model.FakeName, downloadRequest model.FileDownloadRequ
 	pdf.SetFont("Arial", "", 8)
 
 	// Rows
-	y = pdf.GetY()
-	srNo := 1
-	for _, fund := range fakename.Passionfund {
-		maxHt := lineHt
-		// Cell heigHt calculation loop
-		count := 0
-		cell.Str = strconv.Itoa(srNo)
-		cell.List = pdf.SplitLines([]byte(cell.Str), colWd[count]-cellGap-cellGap)
-		cell.Ht = float64(len(cell.List)) * lineHt
-		if cell.Ht > maxHt {
-			maxHt = cell.Ht
-		}
-		cellList[count] = cell
-		count++
 
-		cell.Str = fund.AccountNO
-		cell.List = pdf.SplitLines([]byte(cell.Str), colWd[count]-cellGap-cellGap)
-		cell.Ht = float64(len(cell.List)) * lineHt
-		if cell.Ht > maxHt {
-			maxHt = cell.Ht
-		}
-		cellList[count] = cell
-		count++
+    setRows(pdf,colWd,fakename)
 
-		cell.Str = fund.Branch
-		cell.List = pdf.SplitLines([]byte(cell.Str), colWd[count]-cellGap-cellGap)
-		cell.Ht = float64(len(cell.List)) * lineHt
-		if cell.Ht > maxHt {
-			maxHt = cell.Ht
-		}
-		cellList[count] = cell
-		count++
+    pdf.MultiCell(50, 20, "", "", "", false)
 
-		cell.Str = fund.Name
-		cell.List = pdf.SplitLines([]byte(cell.Str), colWd[count]-cellGap-cellGap)
-		cell.Ht = float64(len(cell.List)) * lineHt
-		if cell.Ht > maxHt {
-			maxHt = cell.Ht
-		}
-		cellList[count] = cell
-		count++
+    setFooter(pdf)
 
-		cell.Str = fund.CCY
-		cell.List = pdf.SplitLines([]byte(cell.Str), colWd[count]-cellGap-cellGap)
-		cell.Ht = float64(len(cell.List)) * lineHt
-		if cell.Ht > maxHt {
-			maxHt = cell.Ht
-		}
-		cellList[count] = cell
-		count++
-
-		cell.Str = formatDate(fund.StartDate)
-		cell.List = pdf.SplitLines([]byte(cell.Str), colWd[count]-cellGap-cellGap)
-		cell.Ht = float64(len(cell.List)) * lineHt
-		if cell.Ht > maxHt {
-			maxHt = cell.Ht
-		}
-		cellList[count] = cell
-		count++
-
-		cell.Str = fund.InstallmentAmount
-		cell.List = pdf.SplitLines([]byte(cell.Str), colWd[count]-cellGap-cellGap)
-		cell.Ht = float64(len(cell.List)) * lineHt
-		if cell.Ht > maxHt {
-			maxHt = cell.Ht
-		}
-		cellList[count] = cell
-		count++
-
-		cell.Str = fund.MaturityAmt
-		cell.List = pdf.SplitLines([]byte(cell.Str), colWd[count]-cellGap-cellGap)
-		cell.Ht = float64(len(cell.List)) * lineHt
-		if cell.Ht > maxHt {
-			maxHt = cell.Ht
-		}
-		cellList[count] = cell
-		count++
-
-		cell.Str = formatDate(fund.DateOfMaturity)
-		cell.List = pdf.SplitLines([]byte(cell.Str), colWd[count]-cellGap-cellGap)
-		cell.Ht = float64(len(cell.List)) * lineHt
-		if cell.Ht > maxHt {
-			maxHt = cell.Ht
-		}
-		cellList[count] = cell
-		count++
-
-		cell.Str = fund.Tenure
-		cell.List = pdf.SplitLines([]byte(cell.Str), colWd[count]-cellGap-cellGap)
-		cell.Ht = float64(len(cell.List)) * lineHt
-		if cell.Ht > maxHt {
-			maxHt = cell.Ht
-		}
-		cellList[count] = cell
-		count++
-
-		cell.Str = fund.RateOfInterest
-		cell.List = pdf.SplitLines([]byte(cell.Str), colWd[count]-cellGap-cellGap)
-		cell.Ht = float64(len(cell.List)) * lineHt
-		if cell.Ht > maxHt {
-			maxHt = cell.Ht
-		}
-		cellList[count] = cell
-		count++
-
-		cell.Str = fund.CurrentPrincipalAmt
-		cell.List = pdf.SplitLines([]byte(cell.Str), colWd[count]-cellGap-cellGap)
-		cell.Ht = float64(len(cell.List)) * lineHt
-		if cell.Ht > maxHt {
-			maxHt = cell.Ht
-		}
-		cellList[count] = cell
-		count++
-		// Cell render loop
-		count = 0
-
-		x := marginH
-		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
-		cell = cellList[count]
-		cellY := y + cellGap + (maxHt-cell.Ht)/2
-		for splitJ := 0; splitJ < len(cell.List); splitJ++ {
-			pdf.SetXY(x+cellGap, cellY)
-			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.List[splitJ]), "", 0,
-				"C", false, 0, "")
-			cellY += lineHt
-		}
-		x += colWd[count]
-		count++
-
-		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
-		cell = cellList[count]
-		cellY = y + cellGap + (maxHt-cell.Ht)/2
-		for splitJ := 0; splitJ < len(cell.List); splitJ++ {
-			pdf.SetXY(x+cellGap, cellY)
-			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.List[splitJ]), "", 0,
-				"C", false, 0, "")
-			cellY += lineHt
-		}
-		x += colWd[count]
-		count++
-		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
-		cell = cellList[count]
-		cellY = y + cellGap + (maxHt-cell.Ht)/2
-		for splitJ := 0; splitJ < len(cell.List); splitJ++ {
-			pdf.SetXY(x+cellGap, cellY)
-			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.List[splitJ]), "", 0,
-				"C", false, 0, "")
-			cellY += lineHt
-		}
-		x += colWd[count]
-		count++
-		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
-		cell = cellList[count]
-		cellY = y + cellGap + (maxHt-cell.Ht)/2
-		for splitJ := 0; splitJ < len(cell.List); splitJ++ {
-			pdf.SetXY(x+cellGap, cellY)
-			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.List[splitJ]), "", 0,
-				"C", false, 0, "")
-			cellY += lineHt
-		}
-		x += colWd[count]
-		count++
-		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
-		cell = cellList[count]
-		cellY = y + cellGap + (maxHt-cell.Ht)/2
-		for splitJ := 0; splitJ < len(cell.List); splitJ++ {
-			pdf.SetXY(x+cellGap, cellY)
-			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.List[splitJ]), "", 0,
-				"C", false, 0, "")
-			cellY += lineHt
-		}
-		x += colWd[count]
-		count++
-		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
-		cell = cellList[count]
-		cellY = y + cellGap + (maxHt-cell.Ht)/2
-		for splitJ := 0; splitJ < len(cell.List); splitJ++ {
-			pdf.SetXY(x+cellGap, cellY)
-			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.List[splitJ]), "", 0,
-				"C", false, 0, "")
-			cellY += lineHt
-		}
-		x += colWd[count]
-		count++
-		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
-		cell = cellList[count]
-		cellY = y + cellGap + (maxHt-cell.Ht)/2
-		for splitJ := 0; splitJ < len(cell.List); splitJ++ {
-			pdf.SetXY(x+cellGap, cellY)
-			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.List[splitJ]), "", 0,
-				"C", false, 0, "")
-			cellY += lineHt
-		}
-		x += colWd[count]
-		count++
-		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
-		cell = cellList[count]
-		cellY = y + cellGap + (maxHt-cell.Ht)/2
-		for splitJ := 0; splitJ < len(cell.List); splitJ++ {
-			pdf.SetXY(x+cellGap, cellY)
-			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.List[splitJ]), "", 0,
-				"C", false, 0, "")
-			cellY += lineHt
-		}
-		x += colWd[count]
-		count++
-		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
-		cell = cellList[count]
-		cellY = y + cellGap + (maxHt-cell.Ht)/2
-		for splitJ := 0; splitJ < len(cell.List); splitJ++ {
-			pdf.SetXY(x+cellGap, cellY)
-			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.List[splitJ]), "", 0,
-				"C", false, 0, "")
-			cellY += lineHt
-		}
-		x += colWd[count]
-		count++
-		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
-		cell = cellList[count]
-		cellY = y + cellGap + (maxHt-cell.Ht)/2
-		for splitJ := 0; splitJ < len(cell.List); splitJ++ {
-			pdf.SetXY(x+cellGap, cellY)
-			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.List[splitJ]), "", 0,
-				"C", false, 0, "")
-			cellY += lineHt
-		}
-		x += colWd[count]
-		count++
-		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
-		cell = cellList[count]
-		cellY = y + cellGap + (maxHt-cell.Ht)/2
-		for splitJ := 0; splitJ < len(cell.List); splitJ++ {
-			pdf.SetXY(x+cellGap, cellY)
-			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.List[splitJ]), "", 0,
-				"C", false, 0, "")
-			cellY += lineHt
-		}
-		x += colWd[count]
-		count++
-		pdf.Rect(x, y, colWd[count], maxHt+cellGap+cellGap, "D")
-		cell = cellList[count]
-		cellY = y + cellGap + (maxHt-cell.Ht)/2
-		for splitJ := 0; splitJ < len(cell.List); splitJ++ {
-			pdf.SetXY(x+cellGap, cellY)
-			pdf.CellFormat(colWd[count]-cellGap-cellGap, lineHt, string(cell.List[splitJ]), "", 0,
-				"C", false, 0, "")
-			cellY += lineHt
-		}
-		x += colWd[count]
-		count++
-		y += maxHt + cellGap + cellGap
-		if y > pageMaxUsage {
-			pdf.AddPage()
-			y = newPageStart
-		}
-		srNo++
-	}
-
-	pdf.MultiCell(50, 10, "", "", "", false)
-	pdf.SetFont("Arial", "", 9)
-	currDepositBalance := "* Current Deposit Balance - Is the total installment amount paid till date towards funding of the Dream Deposit."
-	line2 := "* In case of default/delay in payments of installments,the maturity value mentioned above will be different from the actual maturity value."
-
-	pdf.MultiCell(0, 5, currDepositBalance, "", "", false)
-	pdf.MultiCell(0, 5, line2, "", "", false)
-	d := time.Now()
-	dateOfCreation := d.Format("02Jan2006")
-
-	fileName := downloadRequest.HashUserId + "_FDSummary_" + dateOfCreation + ".pdf"
-
-	err = pdf.OutputFileAndClose(fileName)
+	err := pdf.OutputFileAndClose("FDSummary.pdf")
 	if err != nil {
 		err = errors.New(literals.ErrCreatingPDF)
-		return
+		return err
 	}
 	bytes, err := ioutil.ReadFile(fileName)
 	base64Encoding := base64.StdEncoding.EncodeToString(bytes)
@@ -461,5 +269,5 @@ func GeneratePDF(fakename model.FakeName, downloadRequest model.FileDownloadRequ
 	passionfund.Body.ReportUrl = fileName
 	passionfund.Body.ReportBytes = base64Encoding
 
-	return
+	return nil
 }
