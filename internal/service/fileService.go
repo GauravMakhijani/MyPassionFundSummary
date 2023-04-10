@@ -51,7 +51,7 @@ func formatDate(date string) string {
 	t, _ := time.Parse(time.RFC3339, date)
 	return t.Format(literals.DateFormat)
 }
-func GenerateFakeData() (user model.FakeName, err error) {
+func GenerateFakeData() (user model.FakeName) {
 
 	fake := faker.New()
 	noOfData := 20
@@ -87,10 +87,7 @@ func GenerateFakeData() (user model.FakeName, err error) {
 }
 
 func (f *FileServiceImpl) DownloadFile(downloadRequest model.FileDownloadRequest) (response model.PassionFundSummaryResponse, err error) {
-	fakeData, err := GenerateFakeData()
-	if err != nil {
-		return
-	}
+	fakeData := GenerateFakeData()
 
 	response, err = GeneratePDF(fakeData, downloadRequest)
 	if err != nil {
@@ -116,7 +113,9 @@ func GeneratePDF(fakename model.FakeName, downloadRequest model.FileDownloadRequ
 		ReadDpi:               true,
 		AllowNegativePosition: true,
 	}
-	pdf.ImageOptions(".././images.png", ximg, yimg, wimg, himg, false, imageOptions, 0, "")
+	//pdf.ImageOptions(".././images.png", ximg, yimg, wimg, himg, false, imageOptions, 0, "")
+	pdf.ImageOptions("/home/josh/Downloads/images.png", ximg, yimg, wimg, himg, false, imageOptions, 0, "")
+
 	pdf.SetY(30)
 
 	pdf.SetFont("Arial", "B", 10)
