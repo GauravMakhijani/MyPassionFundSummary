@@ -43,9 +43,9 @@ func generateFakeData() (user model.UserData){
         PostalCode: fake.Address().PostCode(),
         Country: fake.Address().Country(),
     }
-    user.PassionFunds = make([]model.PassionFund, 5)
+    user.PassionFunds = make([]model.PassionFund, 1000)
     currTime := time.Now()
-    for i:=0;i<5;i++{
+    for i:=0;i<1000;i++{
         user.PassionFunds[i].AccountNo = strconv.Itoa(fake.RandomNumber(10))
         user.PassionFunds[i].BranchName = fake.Address().City()
         user.PassionFunds[i].Name = fake.Person().FirstName()
