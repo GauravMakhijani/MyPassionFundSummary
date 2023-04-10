@@ -10,4 +10,10 @@ const (
 	DateFormat       = "02/01/2006"
 )
 
+type PageStyle string
+
+
+const	PAGEORIENTATION  PageStyle = "L"
+const	UNITSTR         PageStyle = "mm"
+const	PAGESIZE        PageStyle = "A4"
 

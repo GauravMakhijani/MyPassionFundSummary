@@ -1,7 +1,9 @@
 package service
 
 import (
+	"encoding/base64"
 	"errors"
+	"io/ioutil"
 
 	"log"
 
@@ -15,7 +17,7 @@ import (
 )
 
 type FileService interface {
-	DownloadFile() (model.FileDownloadResponse, error)
+	DownloadFile(model.FileDownloadRequest) (model.PassionFundSummaryResponse, error)
 }
 
 type FileServiceImpl struct {
@@ -63,20 +65,20 @@ func GenerateFakeData() (user model.FakeName, err error) {
 
 }
 
-func (f *FileServiceImpl) DownloadFile() (response model.FileDownloadResponse, err error) {
+func (f *FileServiceImpl) DownloadFile(downloadRequest model.FileDownloadRequest) (response model.PassionFundSummaryResponse, err error) {
 	fakeData, err := GenerateFakeData()
 	if err != nil {
 		return
 	}
 
-	err = GeneratePDF(fakeData)
+	response, err = GeneratePDF(fakeData, downloadRequest)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return model.FileDownloadResponse{}, nil
+	return response, nil
 }
 
-func GeneratePDF(fakename model.FakeName) (err error) {
+func GeneratePDF(fakename model.FakeName, downloadRequest model.FileDownloadRequest) (passionfund model.PassionFundSummaryResponse, err error) {
 	const (
 		colCount     = 12
 		marginH      = 5.0
@@ -90,12 +92,8 @@ func GeneratePDF(fakename model.FakeName) (err error) {
 		cellList [colCount]model.CellType
 		cell     model.CellType
 	)
-	pageStyle := model.PageStyle{
-		PageOrientation: "L",
-		UnitStr:         "mm",
-		PageSize:        "A4",
-	}
-	pdf := gofpdf.New(pageStyle.PageOrientation, pageStyle.UnitStr, pageStyle.PageSize, "")
+
+	pdf := gofpdf.New(string(literals.PAGEORIENTATION), string(literals.UNITSTR), string(literals.PAGESIZE), "")
 	pdf.AddPage()
 	//Styling
 	pdf.SetFont("Arial", "", 10)
@@ -447,12 +445,21 @@ func GeneratePDF(fakename model.FakeName) (err error) {
 
 	pdf.MultiCell(0, 5, currDepositBalance, "", "", false)
 	pdf.MultiCell(0, 5, line2, "", "", false)
+	d := time.Now()
+	dateOfCreation := d.Format("02Jan2006")
 
-	err = pdf.OutputFileAndClose("FDSummary.pdf")
+	fileName := downloadRequest.HashUserId + "_FDSummary_" + dateOfCreation + ".pdf"
+
+	err = pdf.OutputFileAndClose(fileName)
 	if err != nil {
 		err = errors.New(literals.ErrCreatingPDF)
 		return
 	}
+	bytes, err := ioutil.ReadFile(fileName)
+	base64Encoding := base64.StdEncoding.EncodeToString(bytes)
+
+	passionfund.Body.ReportUrl = fileName
+	passionfund.Body.ReportBytes = base64Encoding
 
 	return
 }

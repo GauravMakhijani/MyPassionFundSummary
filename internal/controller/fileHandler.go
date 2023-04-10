@@ -28,10 +28,10 @@ func PingHandler(rw http.ResponseWriter, rq *http.Request) {
 	rw.Write(respBytes)
 }
 
-func handleDownloadPDF(w http.ResponseWriter, r *http.Request, deps *server.Dependencies, downloadRequest *model.FileDownloadRequest) {
+func handleDownloadPDF(w http.ResponseWriter, r *http.Request, deps *server.Dependencies, downloadRequest model.FileDownloadRequest) {
 	//to be implemented by Rutuja
 	//fmt.Print("hiiiiiiiii")
-	response, err := deps.FileService.DownloadFile()
+	response, err := deps.FileService.DownloadFile(downloadRequest)
 	if err != nil {
 		response := model.Response{
 			Message: "fail to download file",
@@ -68,7 +68,7 @@ func DownloadMyPassionFundSummaryHandler(deps *server.Dependencies) http.Handler
 
 		switch downloadRequest.FormatType {
 		case literals.PDFFormat:
-			handleDownloadPDF(w, r, deps, &downloadRequest)
+			handleDownloadPDF(w, r, deps, downloadRequest)
 		case literals.ExcelFormat:
 			handleDownloadExcel(w, r, deps, &downloadRequest)
 		default:

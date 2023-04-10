@@ -9,9 +9,12 @@ type FileDownloadRequest struct {
 	FormatType string `json:"formatType"`
 }
 
-type FileDownloadResponse struct {
-	ReportBytes     string `json:"reportBytes"`
-	ReportGenerated string `json:"reportGenerated"`
+type PassionFundReport struct {
+	ReportBytes string `json:"reportBytes"`
+	ReportUrl   string `json:"reportGenerated"`
+}
+type PassionFundSummaryResponse struct {
+	Body PassionFundReport `json:"body"`
 }
 
 type Address struct {
@@ -44,16 +47,8 @@ type FakeData struct {
 	CurrentPrincipalAmt string
 }
 
-type PageStyle struct{
-	PageOrientation string
-	UnitStr string
-	PageSize string
-}
-
 type CellType struct {
 	Str  string
 	List [][]byte
 	Ht   float64
 }
-
-
