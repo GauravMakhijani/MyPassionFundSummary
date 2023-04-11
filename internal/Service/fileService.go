@@ -135,13 +135,13 @@ func (f *FileServiceImpl) DownloadFileAsExcel(downloadRequest *model.FileDownloa
     dateOfCreation := d.Format("02Jan2006")
     fileName := downloadRequest.HashUserId + "_MyPassionFundSummary_"+dateOfCreation+ ".xlsx"
 
-    if err= file.SaveAs(fileName);err!=nil{
+    if err= file.SaveAs("../internal/storage/"+fileName);err!=nil{
         logrus.WithField("err", err.Error()).Error(err)
         err = errors.New(literals.ErrCreatingExcelFile)
         return
     }
 
-    bytes,err:= ioutil.ReadFile("./"+fileName)
+    bytes,err:= ioutil.ReadFile("../internal/storage/"+fileName)
     if err != nil {
         logrus.WithField("err", err.Error()).Error(err)
         return
