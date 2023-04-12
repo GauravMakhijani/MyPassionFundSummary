@@ -1,6 +1,6 @@
 package server
 
-import "github.com/GauravMakhijani/MyPassionFundSummary/internal/service"
+import service "github.com/GauravMakhijani/MyPassionFundSummary/internal/Service"
 
 type Dependencies struct {
     FileService service.FileService
