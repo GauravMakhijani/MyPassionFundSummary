@@ -18,8 +18,10 @@ func main() {
 		logrus.WithError(err).Error("Failed to initialize dependencies")
 		return
 	}
+
 	router := controller.InitRouter(deps)
 	server := negroni.Classic()
 	server.UseHandler(router)
-	server.Run(":8080")
+	server.Run(":33001")
+
 }

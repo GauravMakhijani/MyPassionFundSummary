@@ -1,9 +1,9 @@
 package service
 
 import (
+	"bytes"
 	"encoding/base64"
-	"errors"
-	"io/ioutil"
+	"io"
 
 	"log"
 
@@ -99,7 +99,9 @@ func (f *FileServiceImpl) DownloadFile(downloadRequest model.FileDownloadRequest
 func GeneratePDF(fakename model.FakeName, downloadRequest model.FileDownloadRequest) (passionfund model.PassionFundSummaryResponse, err error) {
 
 	pdf := gofpdf.New("L", "mm", "A4", "")
+
 	pdf.AddPage()
+
 	//Styling
 	pdf.SetFont("Arial", "", 10)
 	pdf.SetMargins(marginH, 10, marginH)
@@ -113,8 +115,7 @@ func GeneratePDF(fakename model.FakeName, downloadRequest model.FileDownloadRequ
 		ReadDpi:               true,
 		AllowNegativePosition: true,
 	}
-	//pdf.ImageOptions(".././images.png", ximg, yimg, wimg, himg, false, imageOptions, 0, "")
-	pdf.ImageOptions("/home/josh/Downloads/images.png", ximg, yimg, wimg, himg, false, imageOptions, 0, "")
+	pdf.ImageOptions(".././images.png", ximg, yimg, wimg, himg, false, imageOptions, 0, "")
 
 	pdf.SetY(30)
 
@@ -169,21 +170,26 @@ func GeneratePDF(fakename model.FakeName, downloadRequest model.FileDownloadRequ
 	pdf.MultiCell(50, 20, "", "", "", false)
 
 	setFooter(pdf)
+	//create new buffer
+	buffer := bytes.Buffer{}
+	//initialize writer to write to buffer
+	writer := io.Writer(&buffer)
+	//calls the Output method on the pdf variable to write the PDF document to the buffer using the writer created
+	err = pdf.Output(writer)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	//byte slice that contains a copy of the data written to the buffer
+	data := buffer.Bytes()
+	pdfBase64 := base64.StdEncoding.EncodeToString(data)
 	d := time.Now()
 	dateOfCreation := d.Format("02Jan2006")
 
 	fileName := downloadRequest.HashUserId + "_FDSummary_" + dateOfCreation + ".pdf"
 
-	err = pdf.OutputFileAndClose(fileName)
-	if err != nil {
-		err = errors.New(literals.ErrCreatingPDF)
-		return
-	}
-	bytes, err := ioutil.ReadFile(fileName)
-	base64Encoding := base64.StdEncoding.EncodeToString(bytes)
-
 	passionfund.Body.ReportUrl = fileName
-	passionfund.Body.ReportBytes = base64Encoding
+	passionfund.Body.ReportBytes = pdfBase64
 
 	return
 }

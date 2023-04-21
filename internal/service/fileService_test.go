@@ -14,35 +14,33 @@ func Test_GenerateFakeData(t *testing.T) {
 		wantType model.FakeName
 	}{
 		{
-			name:     "Test generateFakeData",
+			name: "Test generateFakeData",
 			wantType: model.FakeName{
-				Name:"rutuja",
-				Add:model.Address{
-					Line1: "ryerruru",
-					Line2: "wgeuweueu",
-					Line3: "dbcedb",
-					City: "pune",
-					State: "Maharashtra",
+				Name: "rutuja",
+				Add: model.Address{
+					Line1:   "ryerruru",
+					Line2:   "wgeuweueu",
+					Line3:   "dbcedb",
+					City:    "pune",
+					State:   "Maharashtra",
 					Country: "India",
 					Pincode: "23743636",
 				},
 				Passionfund: []model.FakeData{
 					{
-						AccountNO: "4273482833",
-						Branch: "pune",
-						Name:"rutuja",
-						CCY: "INR",
-						StartDate: "08/02/1988",
-						InstallmentAmount: "798228.12",
-						MaturityAmt: "39865.10",
-						DateOfMaturity: "11/06/1979",
-						Tenure: "12.3",
-						RateOfInterest: "3.4",
+						AccountNO:           "4273482833",
+						Branch:              "pune",
+						Name:                "rutuja",
+						CCY:                 "INR",
+						StartDate:           "08/02/1988",
+						InstallmentAmount:   "798228.12",
+						MaturityAmt:         "39865.10",
+						DateOfMaturity:      "11/06/1979",
+						Tenure:              "12.3",
+						RateOfInterest:      "3.4",
 						CurrentPrincipalAmt: "365266",
-
 					},
 				},
-
 			},
 		},
 	}
@@ -169,13 +167,14 @@ func Test_GeneratePDF(t *testing.T) {
 					ReportUrl:   "453626727_FDSummary_10Apr2023.pdf",
 				},
 			},
-			wantErr: false,
+			wantErr: true,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := GeneratePDF(tt.args.fakename, tt.args.downloadRequest)
+
 			require.NoError(t, err)
 			assert.IsType(t, tt.wantType, got)
 		})

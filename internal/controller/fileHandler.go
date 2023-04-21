@@ -2,7 +2,6 @@ package controller
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -30,7 +29,7 @@ func PingHandler(rw http.ResponseWriter, rq *http.Request) {
 
 func handleDownloadPDF(w http.ResponseWriter, r *http.Request, deps *server.Dependencies, downloadRequest model.FileDownloadRequest) {
 	//to be implemented by Rutuja
-	//fmt.Print("hiiiiiiiii")
+
 	response, err := deps.FileService.DownloadFile(downloadRequest)
 	if err != nil {
 		response := model.Response{
@@ -56,15 +55,12 @@ func DownloadMyPassionFundSummaryHandler(deps *server.Dependencies) http.Handler
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		var downloadRequest model.FileDownloadRequest
 		err := json.NewDecoder(r.Body).Decode(&downloadRequest)
-		fmt.Print("hello rutuja")
 		if err != nil {
 			response := model.Response{
 				Message: literals.ErrInvalidInput,
 			}
 			api.Response(w, http.StatusBadRequest, response)
 		}
-
-		fmt.Println("hiii>>>>>>>>>>>>")
 
 		switch downloadRequest.FormatType {
 		case literals.PDFFormat:
