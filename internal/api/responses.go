@@ -7,8 +7,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func Response(w http.ResponseWriter,status int, response interface{}){
-    respBytes, err := json.Marshal(response)
+func Response(w http.ResponseWriter, status int, response interface{}) {
+	respBytes, err := json.Marshal(response)
 	if err != nil {
 		logrus.WithField("err", err.Error()).Error()
 		status = http.StatusInternalServerError
